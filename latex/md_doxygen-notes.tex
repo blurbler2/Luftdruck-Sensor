@@ -1,0 +1,81 @@
+\chapter{Doxygen }
+\hypertarget{md_doxygen-notes}{}\label{md_doxygen-notes}\index{Doxygen@{Doxygen}}
+\label{md_doxygen-notes_autotoc_md0}%
+\Hypertarget{md_doxygen-notes_autotoc_md0}%
+
+
+Doxygen ist ein Tool, das automatisch Dokumentationen aus speziell formatierten Kommentaren im Code generiert \hypertarget{md_doxygen-notes_autotoc_md1}{}\doxysection{\texorpdfstring{Installation}{Installation}}\label{md_doxygen-notes_autotoc_md1}
+
+\begin{DoxyEnumerate}
+\item Installiere auf mac:\+ {\ttfamily brew install doxygen} 
+\end{DoxyEnumerate}\hypertarget{md_doxygen-notes_autotoc_md2}{}\doxysection{\texorpdfstring{Doxyfile}{Doxyfile}}\label{md_doxygen-notes_autotoc_md2}
+Die Doxyfile ist die Konfigurationsdatei, die Doxygen verwendet, um die Dokumentation zu generieren.
+\begin{DoxyEnumerate}
+\item Generiere in deinem projekt directory:\+ {\ttfamily doxygen -\/g} 
+\end{DoxyEnumerate}\hypertarget{md_doxygen-notes_autotoc_md3}{}\doxysection{\texorpdfstring{Konfiguration}{Konfiguration}}\label{md_doxygen-notes_autotoc_md3}
+
+\begin{DoxyEnumerate}
+\item Öffne die Doxyfile mit einem Texteditor und passe die folgenden Parameter an:\+ 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{PROJECT\_NAME:\ Der\ Name\ deines\ Projekts.}
+\DoxyCodeLine{OUTPUT\_DIRECTORY:\ Das\ Verzeichnis,\ in\ dem\ die\ Dokumentation\ gespeichert\ wird.}
+\DoxyCodeLine{INPUT:\ Das\ Verzeichnis\ oder\ die\ Dateien,\ die\ Doxygen\ analysieren\ soll\ (z.\ B.\ src/\ oder\ bmp180.h).}
+\DoxyCodeLine{EXTRACT\_ALL:\ Setze\ dies\ auf\ YES,\ um\ alle\ Kommentare\ zu\ extrahieren.}
+\DoxyCodeLine{GENERATE\_HTML:\ Setze\ dies\ auf\ YES,\ um\ HTML-\/Dokumentation\ zu\ erstellen.}
+\DoxyCodeLine{GENERATE\_LATEX:\ Setze\ dies\ auf\ YES,\ um\ PDF-\/Dokumentation\ zu\ erstellen\ (optional).}
+
+\end{DoxyCode}
+
+\end{DoxyEnumerate}\hypertarget{md_doxygen-notes_autotoc_md4}{}\doxysection{\texorpdfstring{Kommentare}{Kommentare}}\label{md_doxygen-notes_autotoc_md4}
+
+\begin{DoxyEnumerate}
+\item Füge Datei-\/\+Kommentare, Funktions-\/\+Kommentare oder param und return value params in deinen Code ein, zB:\+
+\end{DoxyEnumerate}
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{/**}
+\DoxyCodeLine{\ *\ @file\ bmp180.h}
+\DoxyCodeLine{\ *\ @brief\ BMP180\ Sensor\ Library}
+\DoxyCodeLine{\ *\ }
+\DoxyCodeLine{\ *\ Diese\ Datei\ enthält\ die\ Schnittstellen\ für\ die\ BMP180-\/Sensorfunktionen.}
+\DoxyCodeLine{\ */}
+
+\end{DoxyCode}
+
+
+Function Comments
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{/**}
+\DoxyCodeLine{\ *\ @brief\ Initialisiert\ den\ BMP180-\/Sensor.}
+\DoxyCodeLine{\ *\ }
+\DoxyCodeLine{\ *\ Diese\ Funktion\ liest\ die\ Kalibrierungsdaten\ aus\ dem\ Sensor.}
+\DoxyCodeLine{\ */}
+\DoxyCodeLine{void\ BMP180\_Init(void);}
+\DoxyCodeLine{}
+\DoxyCodeLine{/**}
+\DoxyCodeLine{\ *\ @brief\ Liest\ den\ Luftdruck\ aus\ dem\ BMP180-\/Sensor.}
+\DoxyCodeLine{\ *\ }
+\DoxyCodeLine{\ *\ @return\ Luftdruck\ in\ Pascal.}
+\DoxyCodeLine{\ */}
+\DoxyCodeLine{int32\_t\ BMP180\_ReadPressure(void);}
+\DoxyCodeLine{}
+\DoxyCodeLine{/**}
+\DoxyCodeLine{\ *\ @brief\ Liest\ die\ Temperatur\ aus\ dem\ BMP180-\/Sensor.}
+\DoxyCodeLine{\ *\ }
+\DoxyCodeLine{\ *\ @return\ Temperatur\ in\ Grad\ Celsius.}
+\DoxyCodeLine{\ */}
+\DoxyCodeLine{float\ BMP180\_ReadTemperature(void);}
+
+\end{DoxyCode}
+\hypertarget{md_doxygen-notes_autotoc_md5}{}\doxysection{\texorpdfstring{Generiere Dokumentation}{Generiere Dokumentation}}\label{md_doxygen-notes_autotoc_md5}
+
+\begin{DoxyEnumerate}
+\item Erstelle die Dokumentation aus dem Doxyfile:\+
+\end{DoxyEnumerate}
+
+{\ttfamily doxygen Doxyfile}
+
+Erstellt eine .html datei der Dokumentation, und optional latex, wenn konfiguriert 
