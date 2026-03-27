@@ -6,7 +6,7 @@ Messen Sie Änderungen des Luftdrucks und zeigen Sie diese an.
 
 | Nr | Aufgabe | Erledigt |
 |----|-----------------------------------------------------------------------------------------------------------------------------------|:---:|
-| 1  | Analyse der Funktionen der jeweiligen Komponente (Datenblatt aus Web besorgen!) | [ ] |
+| 1  | Analyse der Funktionen der jeweiligen Komponente (Datenblatt aus Web besorgen!) | [ x ] |
 | 2  | Anschluss der jeweiligen Komponente an den STM32 über die Schnittstelle, die der jeweilige Sensor bereithält. | [ ] |
 | 3  | Inbetriebnahme und (nachweisliche!) Lösung der gestellten Aufgabe. | [ ] |
 | 4  | Geeignete Visualisierung der Ergebnisse unter Zuhilfenahme des E/A-Boards (7-Segmentanzeige, LED, usw.) oder eines 2004-LCD-Displays. | [ ] |
