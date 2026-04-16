@@ -1,4 +1,19 @@
+# Ignore build artifacts and temporary files
 build
 mx.scratch
 !.settings
+
+# Ignore system files and temporary files
 .DS_Store
+*.log
+*.tmp
+
+# Ignore generated documentation
+html/
+latex/
+docs/html/
+
+# Ignore Doxygen generated documentation
+html/
+latex/
+docs/html/
