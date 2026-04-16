@@ -62,3 +62,21 @@ float BMP180_ReadTemperature(void);
 `doxygen Doxyfile`
 
 Erstellt eine .html datei der Dokumentation, und optional latex, wenn konfiguriert
+
+
+### Deployment: GitHub Pages
+
+Um die generierte Doxygen-Dokumentation automatisch auf GitHub Pages bereitzustellen, arbeiten wir auf dem `gh-pages` branch.
+
+1. Stelle sicher, dass die HTML-Dokumentation im gewünschten Ordner (z. B. `docs/html/` oder `html/`) generiert wurde.
+2. Richte einen Branch namens `gh-pages` in deinem Repository ein (falls noch nicht vorhanden).
+3. Committe und pushe den `gh-pages`-Branch zu GitHub:
+    ```
+    git checkout gh-pages
+    git add .
+    git commit -m "Deploy Doxygen documentation"
+    git push origin gh-pages
+    ```
+4.  Aktiviere GitHub Pages in den Repository-Einstellungen und wähle als Quelle den `gh-pages`-Branch.
+
+5. Nach dem Push ist die Dokumentation unter `https://<username>.github.io/<repository>/` erreichbar.
