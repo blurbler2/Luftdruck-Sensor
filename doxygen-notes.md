@@ -66,17 +66,13 @@ Erstellt eine .html datei der Dokumentation, und optional latex, wenn konfigurie
 
 ### Deployment: GitHub Pages
 
-Um die generierte Doxygen-Dokumentation automatisch auf GitHub Pages bereitzustellen, arbeiten wir auf dem `gh-pages` branch.
+**Deployment mit GitHub Actions:**
 
-1. Stelle sicher, dass die HTML-Dokumentation im gewünschten Ordner (z. B. `docs/html/` oder `html/`) generiert wurde.
-2. Richte einen Branch namens `gh-pages` in deinem Repository ein (falls noch nicht vorhanden).
-3. Committe und pushe den `gh-pages`-Branch zu GitHub:
-    ```
-    git checkout gh-pages
-    git add .
-    git commit -m "Deploy Doxygen documentation"
-    git push origin gh-pages
-    ```
-4.  Aktiviere GitHub Pages in den Repository-Einstellungen und wähle als Quelle den `gh-pages`-Branch.
+Die Doxygen-Konfiguration und der Workflow werden auf dem Hauptbranch (z. B. `main`) gepflegt. Der Branch `gh-pages` wird ausschließlich automatisch vom Workflow für die Veröffentlichung der generierten Dokumentation genutzt.
 
-5. Nach dem Push ist die Dokumentation unter `https://<username>.github.io/<repository>/` erreichbar.
+**Vorgehen:**
+1. Pflege Code, Doxyfile und Workflow auf `main` (oder `master`).
+2. Bei jedem Push auf `main` baut GitHub Actions automatisch die Doxygen-Dokumentation und deployed sie nach `gh-pages`.
+3. Der Branch `gh-pages` enthält nur die generierte HTML-Dokumentation und wird nicht manuell bearbeitet.
+4. Aktiviere GitHub Pages in den Repository-Einstellungen und wähle als Quelle den `gh-pages`-Branch.
+5. Die Doku ist dann unter `https://<username>.github.io/<repository>/` erreichbar.
