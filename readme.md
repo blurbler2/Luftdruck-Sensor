@@ -148,25 +148,25 @@ Physikalisch sind das keine direkten Messgrößen, sondern Parameter eines Herst
 - Liest 2 Bytes aus 0xF6 aus und liefert damit den ungefähren Rohwert UT (uint 16).
 
 Um aus dem unkompensierten Temperaturwert wird mit der Funktion `BMP180_GetTemp()` der "echte" Messwert berechnet:
-$$
+\f[
 X_1 = \frac{(UT - AC6)\cdot AC5}{2^{15}}
-$$
+\f]
 
-$$
+\f[
 X_2 = \frac{MC\cdot 2^{11}}{X_1 + MD}
-$$
+\f]
 
-$$
+\f[
 B_5 = X_1 + X_2
-$$
+\f]
 
-$$
+\f[
 T = \frac{B_5 + 8}{2^{4}}
-$$
+\f]
 
-$$
-	{Temperatur (°C)} = \frac{T}{10}
-$$
+\f[
+    ext{Temperatur (°C)} = \frac{T}{10}
+\f]
 
 Die Formeln kommen direkt aus dem BMP180‑Datenblatt. 
 
@@ -184,14 +184,14 @@ Die Funktion gibt dann die Temperatur in °C aus, °C=T/10 weil in 0.1°C Schrit
 
 Um aus dem unkompensierten Luftdruckwert wird mit der Funktion `BMP180_GetPress()` der "echte" Messwert berechnet:
 
-$$
+\f[
 \begin{aligned}
 &\text{Zuerst aus }UT\text{:}\\
 &\quad X_1 = \dfrac{(UT - AC6)\cdot AC5}{2^{15}}\\
 &\quad X_2 = \dfrac{MC\cdot 2^{11}}{X_1 + MD}\\
 &\quad B_5 = X_1 + X_2\\\\
 &\text{Dann für Druck:}\\
-&\quad B_6 = B_5 - 4000\\[6pt]
+&\quad B_6 = B_5 - 4000\[6pt]
 &\quad X_1 = \dfrac{B_2\cdot\bigl(B_6^{2}/2^{12}\bigr)}{2^{11}}\\
 &\quad X_2 = \dfrac{AC2\cdot B_6}{2^{11}}\\
 &\quad X_3 = X_1 + X_2\\
@@ -206,16 +206,16 @@ $$
 &\quad X_2 = \dfrac{-7357\cdot p}{2^{16}}\\
 &\quad p = p + \dfrac{X_1 + X_2 + 3791}{2^{4}}
 \end{aligned}
-$$
+\f]
 
 ## [ Extra ] Seehöhe: Aus Luftdruck mit Referenzhöhe bestimmen
 
 Um aus dem Luftdruck die aktuelle Seehöhe zu berechnen, wurde `BMP180_GetAlt` definiert:
 
 **Seehöhe aus Druck berechnen:**
-$$
+\f[
 h = 44330\left(1 - \left(\dfrac{p}{p_0}\right)^{1/5.255}\right)
-$$
+\f]
 
 p … der gemessene Druck in Pascal (Pa)
 
@@ -224,10 +224,10 @@ p_0 … Referenz-(Meeresspiegel-)Druck in Pascal (Pa)
 
 **Alternativ:**
 
-Berechnung von $p_0$ aus bekannter Referenzhöhe $h_0$:
-$$
+Berechnung von \f$p_0\f$ aus bekannter Referenzhöhe \f$h_0\f$:
+\f[
 p_0 = p\left(1 - \dfrac{h_0}{44330}\right)^{-5.255}
-$$
+\f]
 
 
 ## 4. Visualisierung
