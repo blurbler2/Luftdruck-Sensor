@@ -63,6 +63,12 @@ float BMP180_ReadTemperature(void);
 
 Erstellt eine .html datei der Dokumentation, und optional latex, wenn konfiguriert
 
+## PDF Latex
+
+```
+make -C latex
+open refman.pdf
+```
 
 ### Deployment: GitHub Pages
 

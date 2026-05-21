@@ -139,9 +139,16 @@ Der BMP180  speichert einige Kalibrierwerte als vorzeichenbehaftet (unsigned sho
 Physikalisch sind das keine direkten Messgrößen, sondern Parameter eines Herstellermodels, das die nichtlinearen Eigenschaften des individuellen Sensorelements korrigiert.
 
 ## 2. Temperatur: Von Rohdaten zu echten Messwerten 
-![get uncompensated temperature formula from the datasheet](getut-datasheet.png)
+\htmlonly
+\image html getut-datasheet.png "get uncompensated temperature formula from the datasheet"
+\endhtmlonly
+\latexonly
+\begin{center}
+\includegraphics[width=0.5\textwidth]{getut-datasheet.png}
+\end{center}
+\endlatexonly
 
-### Temperaturmessung: `GetUTemp()`
+### Temperaturmessung — GetUTemp()
 - schreibt Steuerbyte 0x2E ins Register 0xF4 -> startet Temperaturmessung
 - wartet ~5ms (Messzeit)
 - Liest 2 Bytes aus 0xF6 aus und liefert damit den ungefähren Rohwert UT (uint 16).
@@ -171,9 +178,16 @@ Die Formeln kommen direkt aus dem BMP180‑Datenblatt.
 Die Funktion gibt dann die Temperatur in °C aus, °C=T/10 weil in 0.1°C Schritten gerechnet wird.
 
 ## 3. Luftdruck: Von Rohdaten zu echten Messwerten 
-![get uncompensated pressure formula from the datasheet](getup-datasheet.png)
+\htmlonly
+\image html getup-datasheet.png "get uncompensated pressure formula from the datasheet"
+\endhtmlonly
+\latexonly
+\begin{center}
+\includegraphics[width=0.5\textwidth]{getup-datasheet.png}
+\end{center}
+\endlatexonly
 
-### Druckmessung: `Get_UPress(oss)`
+### Druckmessung — Get_UPress(oss)
 - schreibt in 0xF4 das Kommando `0x34 + (oss << 6)` (oss = Oversampling setting 0..3) und die Wartezeit wird abgewartet
     Abhängig vom Wert `oss`, dem Over-Sampling-Setting, bei höherer Auflösung mit längeren Wartezeiten (5...26ms).
 - liest 3 Bytes von 0xF6 (MSB, LSB, XLSB), kombiniert sie zu einem 24 Bit Wert und shiftet 

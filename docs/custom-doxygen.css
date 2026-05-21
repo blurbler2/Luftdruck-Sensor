@@ -103,11 +103,18 @@ div.textblock img.inline {
   height: auto;
 }
 
-/* BMP180 mini diagrams should stay compact */
+/* BMP180 mini diagrams should stay compact (match inline and paragraph images) */
 img[src$="getut-datasheet.png"],
-img[src$="getup-datasheet.png"] {
-  max-width: 340px !important;
-  width: 70% !important;
+p img[src$="getut-datasheet.png"],
+img.inline[src$="getut-datasheet.png"],
+img[src$="getup-datasheet.png"],
+p img[src$="getup-datasheet.png"],
+img.inline[src$="getup-datasheet.png"] {
+  display: block !important;
+  margin: 0.8rem auto !important;
+  max-width: 260px !important;
+  width: 55% !important;
+  height: auto !important;
 }
 
 /* Improve anchor/link appearance */
