@@ -81,9 +81,12 @@ Project generiert in CubeMX
 
 ## Bibliotheksfunktionen
 
-Folgende Funktionen wurden in bmp180.h erstellt:
+Folgende Funktionen wurden in `bmp180.h` erstellt:
 
-Siehe auch die Doxygen-Gruppe @ref bmp180_driver für die öffentliche Bibliothek und die Implementierung in `bmp180.c`.
+Siehe auch die Doxygen-Gruppe @ref bmp180_driver für die öffentliche Bibliothek sowie die Quelldateien auf GitHub:
+
+- [bmp180.h](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Inc/bmp180.h)
+- [bmp180.c](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Src/bmp180.c)
 
 ```
 

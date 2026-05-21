@@ -5,7 +5,8 @@
  * @tableofcontents
  *
  * Diese Seite bündelt die Dokumentation der BMP180-Bibliothek aus
- * [bmp180.h](Core/Inc/bmp180.h) und [bmp180.c](Core/Src/bmp180.c).
+ * [bmp180.h](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Inc/bmp180.h) und
+ * [bmp180.c](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Src/bmp180.c).
  *
  * @section bmp180_driver_overview Überblick
  * - `BMP180_Start()` initialisiert den Sensor und liest die Kalibrierung.
@@ -20,6 +21,6 @@
  * 4. Ergebnisse an die Anwendung weitergeben.
  *
  * @section bmp180_driver_links Quellcode
- * - [bmp180.h](Core/Inc/bmp180.h)
- * - [bmp180.c](Core/Src/bmp180.c)
+ * - [bmp180.h](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Inc/bmp180.h)
+ * - [bmp180.c](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Src/bmp180.c)
  */
