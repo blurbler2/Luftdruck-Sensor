@@ -102,6 +102,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     Write_7Seg(1337, 2);
+    HAL_Delay(250);
   }
   /* USER CODE END 3 */
 }

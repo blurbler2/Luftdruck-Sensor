@@ -49,7 +49,7 @@ const GPIO SegLED[8] =
 };
 
 typedef enum {UNLOCKED = 0, LOCKED} WriteLock;
-typedef enum {DEC = 0, HEX, DASH} DisplayMode;
+typedef enum {DEC = 0, HEX} DisplayMode;
 
 __IO uint32_t    __ValueToDisplay = 0;
 __IO uint16_t    __DP_Position    = 4;
@@ -74,7 +74,6 @@ static void Write_7Seg_C(const uint16_t DigitNo, const GPIO_PinState dp);
 static void Write_7Seg_D(const uint16_t DigitNo, const GPIO_PinState dp);
 static void Write_7Seg_E(const uint16_t DigitNo, const GPIO_PinState dp);
 static void Write_7Seg_F(const uint16_t DigitNo, const GPIO_PinState dp);
-static void Write_7Seg_Minus(const uint16_t DigitNo);
 
 
 void HAL_SYSTICK_Hook(void)
@@ -137,13 +136,6 @@ void HAL_SYSTICK_Hook(void)
 	  default:
 	    ActDigit = 0;
 	}
-  }
-
-  // DASH mode: show '----', bypass digit rendering
-  if (DispMode == DASH)
-  {
-    Write_7Seg_Minus(ActDigitPos);
-    return;
   }
 
   if ((DP_Position & 0x8000) == 0)	// single decimal point
@@ -530,34 +522,6 @@ __INLINE static void Write_7Seg_F(const uint16_t DigitNo, const GPIO_PinState dp
   HAL_GPIO_WritePin(SegLED[5].Port, SegLED[5].Pin, GPIO_PIN_SET);      // f
   HAL_GPIO_WritePin(SegLED[6].Port, SegLED[6].Pin, GPIO_PIN_SET);      // g
   HAL_GPIO_WritePin(SegLED[7].Port, SegLED[7].Pin, dp);                // dp
-}
-
-__INLINE static void Write_7Seg_Minus(const uint16_t DigitNo)
-{
-  ActivateDigit(DigitNo);
-  HAL_GPIO_WritePin(SegLED[0].Port, SegLED[0].Pin, GPIO_PIN_RESET);    // a
-  HAL_GPIO_WritePin(SegLED[1].Port, SegLED[1].Pin, GPIO_PIN_RESET);    // b
-  HAL_GPIO_WritePin(SegLED[2].Port, SegLED[2].Pin, GPIO_PIN_RESET);    // c
-  HAL_GPIO_WritePin(SegLED[3].Port, SegLED[3].Pin, GPIO_PIN_RESET);    // d
-  HAL_GPIO_WritePin(SegLED[4].Port, SegLED[4].Pin, GPIO_PIN_RESET);    // e
-  HAL_GPIO_WritePin(SegLED[5].Port, SegLED[5].Pin, GPIO_PIN_RESET);    // f
-  HAL_GPIO_WritePin(SegLED[6].Port, SegLED[6].Pin, GPIO_PIN_SET);      // g (middle bar = '-')
-  HAL_GPIO_WritePin(SegLED[7].Port, SegLED[7].Pin, DP_OFF);            // dp
-}
-
-void Write_7Seg_Dashes(void)
-{
-  uint16_t Timeout = LOCK_TIMEOUT;
-
-  while (__ChangeDispLock == LOCKED)
-  {
-    if (--Timeout == 0) return;
-  }
-
-  __ChangeDispLock = LOCKED;
-  __DP_Position    = 4;
-  __ChangeDispLock = UNLOCKED;
-  __DispMode       = DASH;
 }
 
 /***** END OF FILE *****/

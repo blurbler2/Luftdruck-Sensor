@@ -61,7 +61,6 @@
 void Reset_7Seg(void);
 void Write_7Seg(const uint16_t Value, const uint16_t DP_Pos);
 void Write_7Seg_Hex(const uint16_t Value, const uint16_t DP_Pos);
-void Write_7Seg_Dashes(void);
 
 void HAL_SYSTICK_Hook(void);
 
