@@ -46,6 +46,10 @@ For flashing, connect the ST-LINK board by USB and make sure it is powered.
 - If you clone this repo on another Mac, check whether the toolchain path in `/.vscode/tasks.json` matches your machine.
 - If you clone it on a different computer, update the hard-coded tool paths or add them to your `PATH`.
 
+### Run and debug
+With the extension for VSCode, it should work to select 
+`STMCube: STM32 Launch STLink GDB Server`
+
 ### Build
 
 - Use the Debug preset from CMake.
