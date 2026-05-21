@@ -19,6 +19,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "SiebenSeg.h"
+#include "bmp180.h"
+#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -58,6 +60,26 @@ static void MX_I2C1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+// Sensor readings (volatile = visible in debug watch while running)
+volatile int32_t TemperatureX10 = 0;  // 0.1 degC
+volatile int32_t PressurePa     = 0;  // Pascal
+volatile int32_t AltitudeM      = 0;  // metres
+volatile int32_t PressureDelta  = 0;  // Pa change since last sample (watchable in debug)
+
+// Internal scaling values for 7-seg display, multiplied to avoid floating point calculations
+uint16_t PressureBarX1000 = 0;  // Pressure in bar * 1000  (e.g. 994 = 0.994 bar)
+uint16_t TempX100         = 0;  // Temperature * 100       (e.g. 830 = 08.30 C)
+uint16_t AltitudeDispM    = 0;  // Altitude in whole metres (e.g. 266)
+uint16_t DeltaAbs         = 0;  // |PressureDelta| in Pa    (e.g. 50 = 50 Pa)
+
+// Altitude calibration (one-shot from first measurement + known reference)
+int32_t SeaLevelPressure        = 101325;  // Pa (integer reference)
+uint8_t AltitudeCalibrated      = 0;
+int32_t PressurePrev            = 0;       // previous sample for delta computation
+
+// Display mode (cycled by buttons)
+typedef enum { DISP_PRESSURE = 0, DISP_DELTA, DISP_TEMPERATURE, DISP_ALTITUDE } DispMode_t;
+volatile DispMode_t DispMode = DISP_PRESSURE;
 /* USER CODE END 0 */
 
 /**
@@ -91,7 +113,7 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-
+  BMP180_Start();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -101,8 +123,60 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    Write_7Seg(1337, 2);
-    HAL_Delay(250);
+    /* Sample sensors continuously */
+    TemperatureX10 = BMP180_GetTemp();
+    PressurePa     = BMP180_GetPress(0);
+
+    /* One-shot reference initialization */
+    if (!AltitudeCalibrated)
+    {
+      SeaLevelPressure = PressurePa;
+      PressurePrev = PressurePa;
+      AltitudeCalibrated = 1;
+    }
+
+    /* Derived values */
+    AltitudeM     = BMP180_GetAlt(0);
+    PressureDelta = PressurePa - PressurePrev;
+    PressurePrev  = PressurePa;
+
+    /* 7-segment display – scale to 4-digit integer per active mode */
+    switch (DispMode)
+    {
+      case DISP_PRESSURE:
+        PressureBarX1000 = (uint16_t)((PressurePa + 50) / 100);
+        if (PressureBarX1000 > 9999) PressureBarX1000 = 9999;
+        Write_7Seg(PressureBarX1000, 0);  /* e.g. 0994 = 0.994 bar */
+        break;
+
+      case DISP_DELTA:
+        DeltaAbs = (uint16_t)((PressureDelta < 0) ? -PressureDelta : PressureDelta);
+        if (DeltaAbs > 9999) DeltaAbs = 9999;
+        Write_7Seg(DeltaAbs, 4);  /* e.g. 0050 = 50 Pa change (no decimal) */
+        break;
+
+      case DISP_TEMPERATURE:
+        if (TemperatureX10 < 0)
+        {
+          /* negative temp not displayable with current 7-seg helper; show 0 */
+          Write_7Seg(0, 4);
+        }
+        else
+        {
+          TempX100 = (uint16_t)(TemperatureX10 * 10); /* 0.1 degC -> 0.01 display format */
+          if (TempX100 > 9999) TempX100 = 9999;
+          Write_7Seg(TempX100, 1);  /* e.g. 0830 = 08.30 C */
+        }
+        break;
+
+      case DISP_ALTITUDE:
+        AltitudeDispM = (uint16_t)((AltitudeM < 0) ? 0 : AltitudeM);
+        if (AltitudeDispM > 9999) AltitudeDispM = 9999;
+        Write_7Seg(AltitudeDispM, 4);  /* e.g. 0266 = 266 m (no decimal) */
+        break;
+    }
+
+    HAL_Delay(500); // sample every 500 ms (debouncing for buttons is handled in EXTI callback) 
   }
   /* USER CODE END 3 */
 }
@@ -151,6 +225,43 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
+/* USER CODE BEGIN 4 */
+
+/**
+  * @brief  EXTI callback – handles Button1 (PD1) and Button2 (PD2) with debounce.
+  *
+  * Button1: toggles between DISP_PRESSURE and DISP_DELTA.
+  * Button2: cycles DISP_TEMPERATURE → DISP_ALTITUDE → DISP_PRESSURE → ...
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  static uint32_t lastTick1 = 0;
+  static uint32_t lastTick2 = 0;
+
+  if (GPIO_Pin == Button1_Pin)
+  {
+    if (HAL_GetTick() - lastTick1 > 200) // debounce: ignore if less than 200 ms since last press
+    {
+      lastTick1 = HAL_GetTick(); // update last tick for debounce
+      DispMode = (DispMode == DISP_DELTA) ? DISP_PRESSURE : DISP_DELTA;
+    }
+  }
+  else if (GPIO_Pin == Button2_Pin)
+  {
+    if (HAL_GetTick() - lastTick2 > 200) // debounce: ignore if less than 200 ms since last press
+    {
+      lastTick2 = HAL_GetTick(); // update last tick for debounce
+      switch (DispMode)
+      {
+        case DISP_TEMPERATURE: DispMode = DISP_ALTITUDE;    break;
+        case DISP_ALTITUDE:    DispMode = DISP_PRESSURE;    break;
+        default:               DispMode = DISP_TEMPERATURE; break;
+      }
+    }
+  }
+}
+/* USER CODE END 4 */
 
 /**
   * @brief I2C1 Initialization Function

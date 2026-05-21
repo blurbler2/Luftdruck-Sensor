@@ -289,3 +289,22 @@ Hinweis: Um die lokale Referenzhöhe zu ändern, passe `KnownAltitudeMeters` in 
 ## Credits
 
 Nach kurzer recherche, sind wir auf diesen Artikel gestoßen, der uns durch die aufgabenstellung geführt hat: https://controllerstech.com/interface-bmp180-with-stm32/ 
+
+
+## Lösung der Aufgabenstellung — Demonstration
+
+Zusammenfassend wird der Luftdruckunterschied im Programm folgendermaßen berechnet:
+
+- Messung: `PressurePa = BMP180_GetPress(oss)` liest den aktuellen Luftdruck in Pascal (Pa).
+- Differenz: `PressureDelta = PressurePa - PressurePrev` (Pa). `PressurePrev` wird nach jeder Messung aktualisiert.
+- Anzeige: `PressureBarX1000 = (PressurePa + 50) / 100` skaliert Pa → bar*1000 für die 7‑Segment‑Anzeige (z.B. 994 → 0.994 bar).
+
+Hinweis: Alle Rechnungen erfolgen in ganzen Einheiten (Integer) zur Laufzeit auf dem STM32 (keine Gleitkommazahlen), um FPU‑Abhängigkeiten zu vermeiden.
+
+Demonstration (Foto):
+
+<img
+  src="docs/images/working-demonstration.jpeg"
+  alt="working demonstration of the final setup, sensor connected to discovery board, diplaying the pressure difference on a seven segment display"
+  width="500"
+/>
