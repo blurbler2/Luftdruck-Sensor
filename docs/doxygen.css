@@ -1,0 +1,8 @@
+/* Doxygen custom styles for images */
+/* Limit inline images used in Markdown to a reasonable width */
+div.textblock img.inline,
+div.textblock img {
+  max-width: 500px;
+  width: 100%;
+  height: auto;
+}

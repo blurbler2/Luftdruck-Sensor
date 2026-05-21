@@ -42,6 +42,7 @@ Die I2C Addresse des BMP180 ist `0xEE` laut dem Datenblatt
 ### Verkabelung
 
 ```
+
 BMP180              STM32F4-DISCOVERY
 --------------------------------------
 GND ---------------> GND
@@ -58,6 +59,7 @@ SCL ---+-----------> PB6
     [ 4.7k ]
        |
        ------------> VDD
+       
 ```
 
 
@@ -69,7 +71,7 @@ Project generiert in CubeMX
 
 Auf Seite 15 vom Datenblatt ist der Algorithmus für Druck und Temperatur Messung dargestellt:
 
-<img src="docs/images/algorithm_datasheet.png" alt="Algorithmus zur Berechnung von Druck und Temperatur (Seite 15)" style="max-width:500px; width:100%; height:auto;" />
+![Algorithmus zur Berechnung von Druck und Temperatur (Seite 15)](docs/images/algorithm_datasheet.png)
 
 ## Visualisierung
 Sieben Segment Anzeige auf dem FH Übungsboard, Bibliothek dafür zur Verfügung gestellt von Prof Paulis im 3. Semester, `Programmieren von Mikrocontrollern UE", WS25 Jahrgang AE27
