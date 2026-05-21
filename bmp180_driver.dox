@@ -1,0 +1,25 @@
+/**
+ * @file bmp180_driver.dox
+ * @brief Doxygen page for the BMP180 driver documentation.
+ * @page bmp180_driver BMP180 Bibliothek
+ * @tableofcontents
+ *
+ * Diese Seite bündelt die Dokumentation der BMP180-Bibliothek aus
+ * [bmp180.h](Core/Inc/bmp180.h) und [bmp180.c](Core/Src/bmp180.c).
+ *
+ * @section bmp180_driver_overview Überblick
+ * - `BMP180_Start()` initialisiert den Sensor und liest die Kalibrierung.
+ * - `BMP180_GetTemp()` liefert die Temperatur in 0,1 °C.
+ * - `BMP180_GetPress(int oss)` liefert den Druck in Pascal.
+ * - `BMP180_GetAlt(int oss)` liefert die Höhe in Metern.
+ *
+ * @section bmp180_driver_flow Ablauf
+ * 1. Kalibrierungsdaten aus dem internen EEPROM einlesen.
+ * 2. Rohdaten per I2C messen.
+ * 3. Temperatur, Druck und Höhe mit Integer-Arithmetik kompensieren.
+ * 4. Ergebnisse an die Anwendung weitergeben.
+ *
+ * @section bmp180_driver_links Quellcode
+ * - [bmp180.h](Core/Inc/bmp180.h)
+ * - [bmp180.c](Core/Src/bmp180.c)
+ */

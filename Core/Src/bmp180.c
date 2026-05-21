@@ -1,6 +1,24 @@
 #include "stm32f4xx_hal.h"
 #include <stdint.h>
 
+/**
+ * @file bmp180.c
+ * @brief Implementation of the BMP180 driver.
+ * @page bmp180_library_usage BMP180 Bibliothek - Implementierung
+ * @tableofcontents
+ *
+ * Diese Seite ergänzt die öffentliche API aus [bmp180.h](../Inc/bmp180.h)
+ * und zeigt die internen Schritte der Sensoranbindung.
+ *
+ * @section bmp180_library_usage_i2c I2C Zugriff
+ * Die Initialisierung und die Rohwertmessung laufen über `HAL_I2C_Mem_Read()`
+ * und `HAL_I2C_Mem_Write()`.
+ *
+ * @section bmp180_library_usage_math Kompensationsrechnungen
+ * Temperatur, Druck und Höhe werden im Code ausschließlich mit Integer- bzw.
+ * Fixed-Point-Arithmetik berechnet.
+ */
+
 /* I2C handles for BMP180 */
 extern I2C_HandleTypeDef hi2c1;
 #define BMP180_I2C &hi2c1

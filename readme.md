@@ -18,11 +18,8 @@ Der Sensor GY-BMP180 ist in der Lage, Temperatur, Luftdruck und Luftfeuchte
 zu messen
 
 Siehe Datenblatt: https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
-<img
-  src="docs/images/general_datasheet.png"
-  alt="Übersicht: Beschreibung und generelle Funktion (Seite 9, Datenblatt)"
-  width="500"
-/>
+
+![Übersicht: Beschreibung und generelle Funktion (Seite 9, Datenblatt)](general_datasheet.png)
 
 
 ### [ Extra ] Höheneinstellung BMP180
@@ -76,23 +73,17 @@ Project generiert in CubeMX
 `HAL_I2C_Mem_Read()` - Liest per I2C Daten aus dem Sensorregister.
 
 
-<img
-  src="docs/images/hal_i2c_mem_read_hal-manual.png"
-  alt="HAL i2c memory read Funktion aus dem hal manual"
-  width="300"
-/>
+![HAL i2c memory read Funktion aus dem hal manual](hal_i2c_mem_read_hal-manual.png)
 
 `HAL_I2C_Mem_Write()` - Schreibt per I2C Daten in eine gewünschte Speicheradresse.
 
-<img
-  src="docs/images/hal_i2c_mem_write_hal-manual.png"
-  alt="HAL i2c memory write Funktion aus dem hal manual"
-  width="300"
-/>
+![HAL i2c memory write Funktion aus dem hal manual](hal_i2c_mem_write_hal-manual.png)
 
 ## Bibliotheksfunktionen
 
 Folgende Funktionen wurden in bmp180.h erstellt:
+
+Siehe auch die Doxygen-Gruppe @ref bmp180_driver für die öffentliche Bibliothek und die Implementierung in `bmp180.c`.
 
 ```
 
@@ -149,11 +140,7 @@ Der BMP180  speichert einige Kalibrierwerte als vorzeichenbehaftet (unsigned sho
 Physikalisch sind das keine direkten Messgrößen, sondern Parameter eines Herstellermodels, das die nichtlinearen Eigenschaften des individuellen Sensorelements korrigiert.
 
 ## 2. Temperatur: Von Rohdaten zu echten Messwerten 
-<img
-  src="docs/images/getut-datasheet.png"
-  alt="get uncompensated temperature formula from the datasheet"
-  width="200"
-/>
+![get uncompensated temperature formula from the datasheet](getut-datasheet.png)
 
 ### `GetUTemp()`
 - schreibt Steuerbyte 0x2E ins Register 0xF4 -> startet Temperaturmessung
@@ -186,11 +173,7 @@ Die Formeln kommen direkt aus dem BMP180‑Datenblatt.
 Die Funktion gibt dann die Temperatur in °C aus, °C=T/10 weil in 0.1°C Schritten gerechnet wird.
 
 ## 3. Luftdruck: Von Rohdaten zu echten Messwerten 
-<img
-  src="docs/images/getup-datasheet.png"
-  alt="get uncompensated pressure formula from the datasheet"
-  width="200"
-/>
+![get uncompensated pressure formula from the datasheet](getup-datasheet.png)
 
 ### `Get_UPress(oss)` 
 - schreibt in 0xF4 das Kommando 0x34+(oss≪6) (oss = Oversampling setting 0..3) und die Wartezeit wird abgewarten
@@ -225,7 +208,7 @@ $$
 \end{aligned}
 $$
 
-## [ Exra ] Seehöhe: Aus Luftdruck mit Referenzhöhe bestimmen
+## [ Extra ] Seehöhe: Aus Luftdruck mit Referenzhöhe bestimmen
 
 Um aus dem Luftdruck die aktuelle Seehöhe zu berechnen, wurde `BMP180_GetAlt` definiert:
 
@@ -248,7 +231,7 @@ $$
 
 
 ## 4. Visualisierung
-Zur Visualisierung wurde die Sieben Segment Anzeige auf dem FH Übungsboard verwendet, mit der dafür zur Verfügung gestellten Bibliothek von Prof Paulis aus 3. Semester, `Programmieren von Mikrocontrollern UE", WS25 Jahrgang AE27.
+Zur Visualisierung wurde die Sieben Segment Anzeige auf dem FH Übungsboard verwendet, mit der dafür zur Verfügung gestellten Bibliothek von Prof Paulis aus dem 3. Semester, WS25 Jahrgang AE27.
 
 ### Anzeige-Steuerung
 Der Anzeigemodus wird in  `main.c` per Taster gesteuert:
@@ -303,8 +286,4 @@ Hinweis: Alle Rechnungen erfolgen in ganzen Einheiten (Integer) zur Laufzeit auf
 
 Demonstration (Foto):
 
-<img
-  src="docs/images/working-demonstration.jpeg"
-  alt="working demonstration of the final setup, sensor connected to discovery board, diplaying the pressure difference on a seven segment display"
-  width="500"
-/>
+![working demonstration of the final setup, sensor connected to discovery board, displaying the pressure difference on a seven segment display](working-demonstration.jpeg)

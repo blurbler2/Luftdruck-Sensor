@@ -1451,7 +1451,7 @@ HTML_STYLESHEET        =
 # documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = docs/doxygen.css
+HTML_EXTRA_STYLESHEET  = docs/custom-doxygen.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1461,7 +1461,8 @@ HTML_EXTRA_STYLESHEET  = docs/doxygen.css
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = docs/images/*
+# Search paths for images referenced from Markdown or Doxygen commands.
+IMAGE_PATH             = docs/images
 
 # The HTML_COLORSTYLE tag can be used to specify if the generated HTML output
 # should be rendered with a dark or light theme.
