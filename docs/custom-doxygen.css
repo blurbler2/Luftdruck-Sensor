@@ -103,6 +103,13 @@ div.textblock img.inline {
   height: auto;
 }
 
+/* BMP180 mini diagrams should stay compact */
+img[src$="getut-datasheet.png"],
+img[src$="getup-datasheet.png"] {
+  max-width: 340px !important;
+  width: 70% !important;
+}
+
 /* Improve anchor/link appearance */
 a { color: #0366d6; text-decoration: none; }
 a:hover { text-decoration: underline; }

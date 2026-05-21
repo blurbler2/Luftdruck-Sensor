@@ -88,14 +88,10 @@ Siehe auch die Doxygen-Gruppe @ref bmp180_driver für die öffentliche Bibliothe
 - [bmp180.h](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Inc/bmp180.h)
 - [bmp180.c](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Src/bmp180.c)
 
-```
-
-BMP180_Start
-BMP180_GetTemp
-BMP180_GetPress
-BMP180_GetAlt
-
-```
+- `BMP180_Start`
+- `BMP180_GetTemp`
+- `BMP180_GetPress`
+- `BMP180_GetAlt`
 
 Auf Seite 15 vom Datenblatt ist der Algorithmus für Druck und Temperatur Messung dargestellt:
 
@@ -145,18 +141,19 @@ Physikalisch sind das keine direkten Messgrößen, sondern Parameter eines Herst
 ## 2. Temperatur: Von Rohdaten zu echten Messwerten 
 ![get uncompensated temperature formula from the datasheet](getut-datasheet.png)
 
-### `GetUTemp()`
+### Temperaturmessung: `GetUTemp()`
 - schreibt Steuerbyte 0x2E ins Register 0xF4 -> startet Temperaturmessung
 - wartet ~5ms (Messzeit)
 - Liest 2 Bytes aus 0xF6 aus und liefert damit den ungefähren Rohwert UT (uint 16).
 
 Um aus dem unkompensierten Temperaturwert wird mit der Funktion `BMP180_GetTemp()` der "echte" Messwert berechnet:
+
 \f[
-X_1 = \frac{(UT - AC6)\cdot AC5}{2^{15}}
+X_1 = (UT - AC6) \cdot AC5 / 2^{15}
 \f]
 
 \f[
-X_2 = \frac{MC\cdot 2^{11}}{X_1 + MD}
+X_2 = (MC \cdot 2^{11}) / (X_1 + MD)
 \f]
 
 \f[
@@ -164,12 +161,10 @@ B_5 = X_1 + X_2
 \f]
 
 \f[
-T = \frac{B_5 + 8}{2^{4}}
+T = (B_5 + 8) / 2^{4}
 \f]
 
-\f[
-    ext{Temperatur (°C)} = \frac{T}{10}
-\f]
+Die Temperatur in °C ist `T / 10`.
 
 Die Formeln kommen direkt aus dem BMP180‑Datenblatt. 
 
@@ -178,8 +173,8 @@ Die Funktion gibt dann die Temperatur in °C aus, °C=T/10 weil in 0.1°C Schrit
 ## 3. Luftdruck: Von Rohdaten zu echten Messwerten 
 ![get uncompensated pressure formula from the datasheet](getup-datasheet.png)
 
-### `Get_UPress(oss)` 
-- schreibt in 0xF4 das Kommando 0x34+(oss≪6) (oss = Oversampling setting 0..3) und die Wartezeit wird abgewarten
+### Druckmessung: `Get_UPress(oss)`
+- schreibt in 0xF4 das Kommando `0x34 + (oss << 6)` (oss = Oversampling setting 0..3) und die Wartezeit wird abgewartet
     Abhängig vom Wert `oss`, dem Over-Sampling-Setting, bei höherer Auflösung mit längeren Wartezeiten (5...26ms).
 - liest 3 Bytes von 0xF6 (MSB, LSB, XLSB), kombiniert sie zu einem 24 Bit Wert und shiftet 
 - Ergebnis: UP uncompensated pressure
@@ -188,27 +183,41 @@ Die Funktion gibt dann die Temperatur in °C aus, °C=T/10 weil in 0.1°C Schrit
 Um aus dem unkompensierten Luftdruckwert wird mit der Funktion `BMP180_GetPress()` der "echte" Messwert berechnet:
 
 \f[
-\begin{aligned}
-&\text{Zuerst aus }UT\text{:}\\
-&\quad X_1 = \dfrac{(UT - AC6)\cdot AC5}{2^{15}}\\
-&\quad X_2 = \dfrac{MC\cdot 2^{11}}{X_1 + MD}\\
-&\quad B_5 = X_1 + X_2\\\\
-&\text{Dann für Druck:}\\
-&\quad B_6 = B_5 - 4000\[6pt]
-&\quad X_1 = \dfrac{B_2\cdot\bigl(B_6^{2}/2^{12}\bigr)}{2^{11}}\\
-&\quad X_2 = \dfrac{AC2\cdot B_6}{2^{11}}\\
-&\quad X_3 = X_1 + X_2\\
-&\quad B_3 = \dfrac{\bigl(AC1\cdot 4 + X_3\bigr)\,2^{oss} + 2}{4}\\[6pt]
-&\quad X_1 = \dfrac{AC3\cdot B_6}{2^{13}}\\
-&\quad X_2 = \dfrac{B1\cdot\bigl(B_6^{2}/2^{12}\bigr)}{2^{16}}\\
-&\quad X_3 = \dfrac{X_1 + X_2 + 2}{4}\\
-&\quad B_4 = \dfrac{AC4\cdot\bigl(X_3 + 32768\bigr)}{2^{15}}\\[6pt]
-&\quad B_7 = \dfrac{(UP - B_3)\cdot 50000}{2^{oss}}\\[6pt]
-&\quad\text{Falls }B_7 < 2^{31}:\quad p = \dfrac{B_7\cdot 2}{B_4}\quad\text{sonst}\quad p = \dfrac{B_7}{B_4}\cdot 2\\[6pt]
-&\quad X_1 = \dfrac{\bigl(p/2^{8}\bigr)^{2}\cdot 3038}{2^{16}}\\
-&\quad X_2 = \dfrac{-7357\cdot p}{2^{16}}\\
-&\quad p = p + \dfrac{X_1 + X_2 + 3791}{2^{4}}
-\end{aligned}
+X_1 = (UT - AC6) \cdot AC5 / 2^{15}
+\f]
+
+\f[
+X_2 = (MC \cdot 2^{11}) / (X_1 + MD),\quad B_5 = X_1 + X_2
+\f]
+
+\f[
+B_6 = B_5 - 4000
+\f]
+
+\f[
+X_1 = (B_2 \cdot B_6^2 / 2^{12}) / 2^{11},\quad X_2 = (AC2 \cdot B_6) / 2^{11},\quad X_3 = X_1 + X_2
+\f]
+
+\f[
+B_3 = ((AC1 \cdot 4 + X_3) \cdot 2^{oss} + 2) / 4
+\f]
+
+\f[
+X_1 = (AC3 \cdot B_6) / 2^{13},\quad X_2 = (B1 \cdot B_6^2 / 2^{12}) / 2^{16},\quad X_3 = (X_1 + X_2 + 2) / 4
+\f]
+
+\f[
+B_4 = AC4 \cdot (X_3 + 32768) / 2^{15}
+\f]
+
+\f[
+B_7 = (UP - B_3) \cdot 50000 / 2^{oss}
+\f]
+
+Falls `B_7 < 2^31`: `p = (B_7 * 2) / B_4`, sonst `p = (B_7 / B_4) * 2`.
+
+\f[
+X_1 = (p/2^{8})^2 \cdot 3038 / 2^{16},\quad X_2 = -7357 \cdot p / 2^{16},\quad p = p + (X_1 + X_2 + 3791) / 2^{4}
 \f]
 
 ## [ Extra ] Seehöhe: Aus Luftdruck mit Referenzhöhe bestimmen
@@ -217,7 +226,7 @@ Um aus dem Luftdruck die aktuelle Seehöhe zu berechnen, wurde `BMP180_GetAlt` d
 
 **Seehöhe aus Druck berechnen:**
 \f[
-h = 44330\left(1 - \left(\dfrac{p}{p_0}\right)^{1/5.255}\right)
+h = 44330 \cdot \left(1 - (p / p_0)^{1/5.255}\right)
 \f]
 
 p … der gemessene Druck in Pascal (Pa)
@@ -229,7 +238,7 @@ p_0 … Referenz-(Meeresspiegel-)Druck in Pascal (Pa)
 
 Berechnung von \f$p_0\f$ aus bekannter Referenzhöhe \f$h_0\f$:
 \f[
-p_0 = p\left(1 - \dfrac{h_0}{44330}\right)^{-5.255}
+p_0 = p \cdot \left(1 - h_0 / 44330\right)^{-5.255}
 \f]
 
 
