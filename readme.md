@@ -21,7 +21,27 @@ zu messen
 
 Siehe Datenblatt: https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
 
-![Übersicht: Beschreibung und generelle Funktion (Seite 9, Datenblatt)](general_datasheet.png)
+\htmlonly
+<figure style="text-align:center;">
+    <img src="general_datasheet.png"
+         alt="Beschreibung und generelle Funktion"
+         style="width:60%; border:1px solid black; padding:6px;" />
+    <figcaption>
+        <b>Abbildung:</b> Beschreibung und generelle Funktion des BMP180 (Seite 9)
+    </figcaption>
+</figure>
+\endhtmlonly
+
+\latexonly
+\begin{figure}[h]
+\centering
+\fbox{
+    \includegraphics[width=0.6\textwidth]{../docs/images/general_datasheet.png}
+}
+\caption{Beschreibung und generelle Funktion des BMP180 (Seite 9)}
+\label{fig:general-datasheet}
+\end{figure}
+\endlatexonly
 
 ## I2C Kommunikation
 Die I2C Addresse des BMP180 ist `0xEE` laut dem Datenblatt
@@ -57,13 +77,46 @@ Projekt generiert in CubeMX:
 
 ## Verwendete HAL Funktionen
 
-1. **HAL_I2C_Mem_Read()** - Liest per I2C Daten aus dem Sensorregister.
+1. **HAL\_I2C\_Mem\_Read()** - Liest per I2C Daten aus dem Sensorregister.
 
-    ![HAL i2c memory read Funktion aus dem hal manual](hal_i2c_mem_read_hal-manual.png)
+\htmlonly
 
-2. **HAL_I2C_Mem_Write()** - Schreibt per I2C Daten in eine gewünschte Speicheradresse.
+<figure style="text-align:center;"> <img src="hal_i2c_mem_read_hal-manual.png" alt="HAL I2C Mem Read" style="width:70%; border:1px solid black; padding:6px;" /> <figcaption>
+    <b>Abbildung:</b>
+    <code>HAL_I2C_Mem_Read()</code> Funktion aus dem HAL-Manual
+</figcaption></figure> \endhtmlonly
 
-    ![HAL i2c memory write Funktion aus dem hal manual](hal_i2c_mem_write_hal-manual.png)
+\latexonly
+\begin{figure}[h]
+\centering
+\fbox{
+\includegraphics[width=0.7\textwidth]{../docs/images/hal_i2c_mem_read_hal-manual.png}
+}
+\caption{\texttt{HAL\_I2C\_Mem\_Read()} Funktion aus dem HAL-Manual}
+\label{fig:hal-read}
+\end{figure}
+\endlatexonly
+
+2. **HAL\_I2C\_Mem\_Write()** - Schreibt per I2C Daten in eine gewünschte Speicheradresse.
+
+\htmlonly
+
+<figure style="text-align:center;"> <img src="hal_i2c_mem_write_hal-manual.png" alt="HAL I2C Mem Write" style="width:70%; border:1px solid black; padding:6px;" /><figcaption>
+    <b>Abbildung:</b>
+    <code>HAL_I2C_Mem_Write()</code> Funktion aus dem HAL-Manual
+</figcaption></figure>
+\endhtmlonly
+
+\latexonly
+\begin{figure}[h]
+\centering
+\fbox{
+\includegraphics[width=0.7\textwidth]{../docs/images/hal_i2c_mem_write_hal-manual.png}
+}
+\caption{\texttt{HAL\_I2C\_Mem\_Write()} Funktion aus dem HAL-Manual}
+\label{fig:hal-write}
+\end{figure}
+\endlatexonly
 
 ## Bibliotheksfunktionen
 
@@ -74,14 +127,27 @@ Siehe auch die Doxygen-Gruppe @ref bmp180_driver für die öffentliche Bibliothe
 - [bmp180.h](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Inc/bmp180.h)
 - [bmp180.c](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Src/bmp180.c)
 
-- `BMP180_Start`
-- `BMP180_GetTemp`
-- `BMP180_GetPress`
-- `BMP180_GetAlt`
+- `BMP180\_Start`
+- `BMP180\_GetTemp`
+- `BMP180\_GetPress`
+- `BMP180\_GetAlt`
 
 Auf Seite 15 vom Datenblatt ist der Algorithmus für Druck und Temperatur Messung dargestellt, welcher dafür nachgebaut wurde:
 
-    ![Algorithmus zur Berechnung von Druck und Temperatur (Seite 15)](docs/images/algorithm_datasheet.png)
+\htmlonly
+
+<figure style="text-align:center;"> <img src="algorithm_datasheet.png" alt="Algorithmus Druck und Temperatur" style="width:55%; border:1px solid black; padding:6px;" /> <figcaption> <b>Abbildung:</b> Algorithmus zur Berechnung von Druck und Temperatur (Seite 15) </figcaption> </figure> \endhtmlonly
+
+\latexonly
+\begin{figure}[h]
+\centering
+\fbox{
+\includegraphics[width=0.55\textwidth]{../docs/images/algorithm_datasheet.png}
+}
+\caption{Algorithmus zur Berechnung von Druck und Temperatur (Seite 15)}
+\label{fig:algorithm}
+\end{figure}
+\endlatexonly
 
 ## 1. Kallibrierungswerte einlesen aus dem EEPROM vom BMP180
 Der Sensor hat einen intern beschriebenen Speicher, in dem er 11 individuelle Kallibrierungs-Koeffizienten mit jeweils 16 bit hinterlegt. Diese sind erforderlich, um die ausgelesenen Rohdaten in korrekte Temperatur- und Luftdruckwerte umzuwandeln.
@@ -105,35 +171,38 @@ Parameter:
 - `22`: Anzahl der zu lesenden Bytes
 - `HAL_MAX_DELAY`: warten, bis der Vorgang fertig ist
 
-Aus je 2 Byte im Array wird ein 16-Bit-Kallibrierungswert gebaut
+Aus je 2 Byte im Array wird ein 16-Bit-Kallibrierungswert gebaut  
 `AC1 = ((Callib_Data[0] << 8) | Callib_Data[1]);`
-Das High-Byte wird dabei um 8 Bit nach links verschoben und mit |  mit dem Low-Byte verknüpft. 
-    -> Beide Bytes (Index 0 und Index 1) ergeben also einen 16 Bit Wert.
-    -> AC1 ist dann ein kalibrierter Sensorparameter.
+
+Das High-Byte wird dabei um 8 Bit nach links verschoben und mit `|` mit dem Low-Byte verknüpft.  
+-> Beide Bytes (Index 0 und Index 1) ergeben also einen 16 Bit Wert.  
+-> AC1 ist dann ein kalibrierter Sensorparameter.
 
 Nach diesem Prinzip werden **alle 11 Kalibrierungsparameter** erstellt:
 
-- `AC1, AC2, AC3 (signed short)`: Temperatur-/Druck-Kalibrierungskoeffizienten, in linearen Termen der Druckkompensation auftreten
-- `AC4 (unsigned short)`: Faktor in Divisionsschritten (dient zur Skalierung / Division) 
+- `AC1, AC2, AC3 (signed short)`: Temperatur-/Druck-Kalibrierungskoeffizienten, die in linearen Termen der Druckkompensation auftreten
+- `AC4 (unsigned short)`: Faktor in Divisionsschritten (dient zur Skalierung / Division)
 - `AC5, AC6 (unsigned short)`: weitere Kalibrierungskoeffizienten, werden bei Temperaturberechnung als Multiplikatoren/Offsets verwendet (z. B. AC5 dient zur Skalierung von UT)
-- `B1, B2 (signed short)`: weitere Druck‑Korrekturkoeffizienten (nichtlinearer Teil)
+- `B1, B2 (signed short)`: weitere Druck-Korrekturkoeffizienten (nichtlinearer Teil)
 - `MB, MC, MD (signed short)`: Temperaturkorrekturkonstanten, erscheinen in der Berechnung von X2 und B5
 
-**Wichtig:**
-Der BMP180  speichert einige Kalibrierwerte als vorzeichenbehaftet (unsigned short) andere nicht (short).
+**Wichtig:**  
+Der BMP180 speichert einige Kalibrierwerte als vorzeichenbehaftet (signed short) und andere als unsigned short.
 
 Physikalisch sind das keine direkten Messgrößen, sondern Parameter eines Herstellermodels, das die nichtlinearen Eigenschaften des individuellen Sensorelements korrigiert.
 
-## 2. Temperatur: Von Rohdaten zu echten Messwerten 
-\htmlonly
-\image html getut-datasheet.png "unkompensierte Temperaturformel aus dem Datenblatt"
-\endhtmlonly
-\latexonly
-\begin{center}
-\includegraphics[width=0.5\textwidth]{getut-datasheet.png}
-\end{center}
-\endlatexonly
+## 2. Temperatur: Von Rohdaten zu echten Messwerten
 
+\htmlonly
+\begin{figure}[htbp]
+\centering
+\fbox{
+\includegraphics[width=0.5\textwidth]{../docs/images/getut-datasheet.png}
+}
+\caption{Unkompensierte Temperaturformel aus dem Datenblatt}
+\label{fig:getut}
+\end{figure}
+\endhtmlonly
 ### Temperaturmessung — GetUTemp()
 - schreibt Steuerbyte 0x2E ins Register 0xF4 -> startet Temperaturmessung
 - wartet ~5ms (Messzeit)
@@ -156,12 +225,18 @@ Die Funktion gibt dann die Temperatur in °C aus, °C=T/10 weil in 0.1°C Schrit
 
 ## 3. Luftdruck: Von Rohdaten zu echten Messwerten 
 \htmlonly
-\image html getup-datasheet.png "unkompensierte Luftdruckformel aus dem Datenblatt"
-\endhtmlonly
+
+<figure style="text-align:center;"> <img src="getup-datasheet.png" alt="Unkompensierte Luftdruckformel" style="width:50%; border:1px solid black; padding:6px;" /> <figcaption> <b>Abbildung:</b> Unkompensierte Luftdruckformel aus dem Datenblatt </figcaption> </figure> \endhtmlonly
+
 \latexonly
-\begin{center}
-\includegraphics[width=0.5\textwidth]{getup-datasheet.png}
-\end{center}
+\begin{figure}[htbp]
+\centering
+\fbox{
+\includegraphics[width=0.5\textwidth]{../docs/images/getup-datasheet.png}
+}
+\caption{Unkompensierte Luftdruckformel aus dem Datenblatt}
+\label{fig:getup}
+\end{figure}
 \endlatexonly
 
 ### Druckmessung — Get_UPress(oss)
@@ -221,14 +296,14 @@ Zur Visualisierung wurde die Sieben Segment Anzeige auf dem FH Übungsboard verw
 
 ### Anzeige-Steuerung
 Der Anzeigemodus wird in  `main.c` per Taster gesteuert:
-    - `Button1` (PD1): wechselt zwischen Luftdruck `DISP_PRESSURE` und Luftdruckdifferenz`DISP_DELTA`
-   - `Button2` (PD2): wechselt zyklisch zwischen `DISP_TEMPERATURE` → `DISP_ALTITUDE` → `DISP_PRESSURE` ...
+    - `Button1` (PD1): wechselt zwischen Luftdruck `DISP\_PRESSURE` und Luftdruckdifferenz`DISP\_DELTA`
+   - `Button2` (PD2): wechselt zyklisch zwischen `DISP\_TEMPERATURE` -> `DISP\_ALTITUDE` -> `DISP\_PRESSURE` ...
 
 ### Anzeigeformate (je Modus)
-   - `DISP_PRESSURE`: zeigt Druck skaliert als *Bar* mit drei Nachkommastellen (Beispiel: `0994` mit Dezimalpunkt links ergibt `0.994` → entspricht ~0.994 bar). Intern wird `Pressure/100` verwendet und der Dezimalpunkt so gesetzt, dass `0.xxx` erscheint.
-   - `DISP_DELTA`: absolute Druckänderung in Pascal, ganzzahlig, keine Nachkommastellen.
-   - `DISP_TEMPERATURE`: Temperatur in °C mit zwei Nachkommastellen (z.B. `08.30` für 8.30 °C). Negative Temperaturen werden auf der 7‑Seg nicht gezeigt (stattdessen `----`).
-   - `DISP_ALTITUDE`: Höhe in Metern, ganzzahliger Wert (z.B. `0266` = 266 m).
+   - `DISP\_PRESSURE`: zeigt Druck skaliert als *Bar* mit drei Nachkommastellen (Beispiel: `0994` mit Dezimalpunkt links ergibt `0.994` -> entspricht ~0.994 bar). Intern wird `Pressure/100` verwendet und der Dezimalpunkt so gesetzt, dass `0.xxx` erscheint.
+   - `DISP\_DELTA`: absolute Druckänderung in Pascal, ganzzahlig, keine Nachkommastellen.
+   - `DISP\_TEMPERATURE`: Temperatur in °C mit zwei Nachkommastellen (z.B. `08.30` für 8.30 °C). Negative Temperaturen werden auf der 7‑Seg nicht gezeigt (stattdessen `----`).
+   - `DISP\_ALTITUDE`: Höhe in Metern, ganzzahliger Wert (z.B. `0266` = 266 m).
 
 
 ## Funktionsweise
@@ -282,15 +357,28 @@ Sie läuft auf dem STM32 selbst und prüft den Sensor direkt über I2C.
 
 Zusammenfassend wird der Luftdruckunterschied im Programm folgendermaßen berechnet:
 
-- **Messung**: `PressurePa = BMP180_GetPress(oss)` liest den aktuellen Luftdruck in Pascal (Pa).
+- **Messung**: `PressurePa = BMP180\_GetPress(oss)` liest den aktuellen Luftdruck in Pascal (Pa).
 - **Differenz**: `PressureDelta = PressurePa - PressurePrev` (Pa). `PressurePrev` wird nach jeder Messung aktualisiert.
-- **Anzeige**: `PressureBarX1000 = (PressurePa + 50) / 100` skaliert Pa → bar*1000 für die 7‑Segment‑Anzeige (z.B. 994 → 0.994 bar).
+- **Anzeige**: `PressureBarX1000 = (PressurePa + 50) / 100` skaliert Pa -> bar*1000 für die 7‑Segment‑Anzeige (z.B. 994 -> 0.994 bar).
 
 **Hinweis**: Alle Rechnungen erfolgen in ganzen Einheiten (Integer) zur Laufzeit auf dem STM32 (keine Gleitkommazahlen), um FPU‑Abhängigkeiten zu vermeiden.
 
 ### Demonstration (Foto):
 
-![Arbeitsdemonstration des finalen Aufbaus, Sensor am Discovery-Board angeschlossen, Anzeige der Druckdifferenz auf einer Sieben-Segment-Anzeige](working-demonstration.jpeg)
+\htmlonly
+
+<figure style="text-align:center;"> <img src="working-demonstration.jpeg" alt="Arbeitsdemonstration" style="width:65%; border:1px solid black; padding:6px;" /> <figcaption> <b>Abbildung:</b> Finaler Aufbau mit BMP180 und STM32F4 Discovery Board </figcaption> </figure> \endhtmlonly
+
+\latexonly
+\begin{figure}[h]
+\centering
+\fbox{
+\includegraphics[width=0.65\textwidth]{../docs/images/working-demonstration.jpeg}
+}
+\caption{Finaler Aufbau mit BMP180 und STM32F4 Discovery Board}
+\label{fig:demo}
+\end{figure}
+\endlatexonly
 
 ## Interpretation
 
