@@ -7,6 +7,13 @@
             "command": "cmake --build build/Debug && \"/Users/blurbler/Library/Application Support/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-objcopy\" -O binary build/Debug/Luftdruck-Sensor.elf build/Debug/Luftdruck-Sensor.bin && /opt/homebrew/bin/st-flash --connect-under-reset write build/Debug/Luftdruck-Sensor.bin 0x8000000 && echo successful",
             "problemMatcher": [],
             "group": "build"
+        },
+        {
+            "label": "Test BMP180 (Debug)",
+            "type": "shell",
+            "command": "cmake -S . -B build/Bmp180Test -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake -DBMP180_TEST=ON && cmake --build build/Bmp180Test && \"/Users/blurbler/Library/Application Support/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-objcopy\" -O binary build/Bmp180Test/Luftdruck-Sensor.elf build/Bmp180Test/Luftdruck-Sensor.bin && /opt/homebrew/bin/st-flash --connect-under-reset write build/Bmp180Test/Luftdruck-Sensor.bin 0x8000000 && echo successful",
+            "problemMatcher": [],
+            "group": "test"
         }
     ]
 }
