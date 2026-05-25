@@ -1,24 +1,57 @@
 /**
  * @file bmp180_driver.dox
- * @brief Doxygen page for the BMP180 driver documentation.
+ * @brief Doxygen-Seite zur BMP180-Treiberbibliothek
  * @page bmp180_driver BMP180 Bibliothek
  * @tableofcontents
  *
- * Diese Seite bündelt die Dokumentation der BMP180-Bibliothek aus
+ * Diese Seite dokumentiert die BMP180-Treiberbibliothek aus
  * [bmp180.h](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Inc/bmp180.h) und
  * [bmp180.c](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Src/bmp180.c).
  *
- * @section bmp180_driver_overview Überblick
- * - `BMP180_Start()` initialisiert den Sensor und liest die Kalibrierung.
- * - `BMP180_GetTemp()` liefert die Temperatur in 0,1 °C.
- * - `BMP180_GetPress(int oss)` liefert den Druck in Pascal.
- * - `BMP180_GetAlt(int oss)` liefert die Höhe in Metern.
+ * @section bmp180_driver_overview Übersicht
+ * Die Bibliothek kapselt die gesamte I²C-Kommunikation mit dem BMP180-Sensor
+ * und stellt eine aufgeräumte API für die Hauptapplikation bereit.
  *
- * @section bmp180_driver_flow Ablauf
- * 1. Kalibrierungsdaten aus dem internen EEPROM einlesen.
- * 2. Rohdaten per I2C messen.
- * 3. Temperatur, Druck und Höhe mit Integer-Arithmetik kompensieren.
- * 4. Ergebnisse an die Anwendung weitergeben.
+ * Öffentliche API:
+ * - `BMP180_Start()` – Initialisiert den Sensor und lädt die Kalibrierkoeffizienten
+ * - `BMP180_GetTemp()` – Liefert die Temperatur in 0,1 °C
+ * - `BMP180_GetPress(int oss)` – Liefert den Druck in Pascal
+ * - `BMP180_GetAlt(int oss)` – Liefert die Höhe in Metern (lineare Näherung)
+ *
+ * @section bmp180_driver_implementation Implementierungsdetails
+ *
+ * ### Kalibrierung
+ * Beim Start werden 22 Byte (11 × 16 Bit) Koeffizienten aus dem EEPROM
+ * des Sensors gelesen (Adressbereich 0xAA–0xBF).
+ *
+ * ### Temperaturmessung
+ * 1. Kommando 0x2E → Register 0xF4 (Start Temperaturmessung)
+ * 2. Wartezeit 5 ms
+ * 3. Lesen 2 Byte ab 0xF6 → UT
+ * 4. Kompensation über X1, X2, B5 → T in 0,1 °C
+ *
+ * ### Druckmessung
+ * 1. Kommando 0x34 + (oss << 6) → Register 0xF4
+ * 2. Wartezeit je nach oss (5–26 ms)
+ * 3. Lesen 3 Byte ab 0xF6 → UP (19–24 Bit)
+ * 4. Kompensation über B3, B4, B7, p → Druck in Pa
+ *
+ * ### Höhenberechnung
+ * Lineare Näherung Δh = (p0 - p) · 8434 / p0
+ * (für kleine Höhenunterschiede ausreichend genau)
+ *
+ * @section bmp180_driver_usage Verwendung
+ * @code{.c}
+ * #include "bmp180.h"
+ *
+ * // Nach I²C-Init:
+ * BMP180_Start();
+ *
+ * // Im Messzyklus:
+ * int32_t temp = BMP180_GetTemp();     // 0,1 °C
+ * int32_t press = BMP180_GetPress(0);  // Pa
+ * int32_t alt = BMP180_GetAlt(0);      // m
+ * @endcode
  *
  * @section bmp180_driver_links Quellcode
  * - [bmp180.h](https://github.com/blurbler2/Luftdruck-Sensor/blob/main/Core/Inc/bmp180.h)

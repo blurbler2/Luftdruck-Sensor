@@ -1,0 +1,72 @@
+@startuml
+skinparam defaultFontName Courier
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+}
+
+title **SysML IBD: Luftdruck-Sensor System**\nInternal Block Diagram -- Daten- und Signalfuesse
+
+component "STM32F411VET6\n(MCU)" as MCU {
+
+  component "main.c\n(Hauptprogramm)" as MAIN {
+    [SystemClock]
+    [GPIO_Init]
+    [I2C1_Init]
+    [Messzyklus\n(500 ms)]
+    [Taster-Auswertung\n(EXTI-Callback)]
+  }
+
+  component "BMP180 Treiber\n(bmp180.c/h)" as DRV {
+    (BMP180_Start)
+    (BMP180_GetTemp)
+    (BMP180_GetPress)
+    (BMP180_GetAlt)
+  }
+
+  component "7-Segment\n(SiebenSeg.c/h)" as SEG {
+    (Segment a..g + DP)
+    (Digit 0..3)
+  }
+
+  component "Test-SW\n(test_bmp180.c/h)" as TEST {
+    (Chip-ID pruefen)
+    (Messzyklus)
+  }
+}
+
+component "Peripherie" as PERIPH {
+
+  component "GY-BMP180" as BMP {
+    () "I2C Addr 0xEE"
+  }
+
+  component "7-Segment-Anzeige" as DISPLAY {
+    () "Segmentsignale"
+    () "Digit-Signale"
+  }
+
+  component "Taster" as BUTTONS {
+    () "PD1 (EXTI1)"
+    () "PD2 (EXTI2)"
+  }
+}
+
+' Datenfluesse
+I2C1_Init --> DRV : HAL_I2C_Mem_Read/Write (100 kHz)
+DRV --> BMP : I2C-Bus (SDA/SCL)
+BMP --> DRV : Messdaten (UT, UP)
+
+DRV --> Messzyklus : Temperatur (0,1 °C)
+DRV --> Messzyklus : Druck (Pa)
+
+Messzyklus --> SEG : Wert + DP-Position
+SEG --> DISPLAY : GPIO Signale
+
+BUTTONS --> Taster_Auswertung : Falling Edge PD1/PD2
+Taster_Auswertung --> Messzyklus : DispMode aendern
+
+Messzyklus --> TEST : optional aktivieren
+TEST --> BMP : Chip-ID pruefen (0x55)
+
+@enduml

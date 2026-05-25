@@ -1,0 +1,88 @@
+@startuml
+skinparam defaultFontName Courier
+skinparam class {
+  BackgroundColor White
+  BorderColor Black
+  FontStyle bold
+}
+
+title **SysML BDD: Luftdruck-Sensor System**\nBlock Definition Diagram
+
+class "STM32F411VET6\n(MCU)" as MCU <<block>> {
+  + SystemClock_Config()
+  + HAL_Init()
+  + Error_Handler()
+}
+
+class "GY-BMP180\n(Drucksensor)" as SENSOR <<block>> {
+  + I2C_Address : uint8_t = 0xEE
+  + PressureRange : hPa = 300..1100
+  + TempRange : °C = -40..+85
+  + Oversampling : int[0..3]
+}
+
+class "BMP180_Treiber\n(bmp180.c / bmp180.h)" as DRIVER <<block>> {
+  + BMP180_Start() : void
+  + BMP180_GetTemp() : int32_t
+  + BMP180_GetPress(oss : int) : int32_t
+  + BMP180_GetAlt(oss : int) : int32_t
+  - read_calliberation_data() : void
+  - Get_UTemp() : uint16_t
+  - Get_UPress(oss : int) : uint32_t
+  - AC1..MD : int16_t/uint16_t
+}
+
+class "Test-SW\n(test_bmp180.c / test_bmp180.h)" as TEST <<block>> {
+  + TestBMP180_CheckI2C() : uint8_t
+  + TestBMP180_Init() : void
+  + TestBMP180_RunOnce() : TestBMP180_Result_t
+  - bmp180_i2c_probe() : uint8_t
+}
+
+class "7-Segment-Anzeige\n(SiebenSeg.c / SiebenSeg.h)" as DISPLAY <<block>> {
+  + Reset_7Seg() : void
+  + Write_7Seg(Value, DP_Pos) : void
+  + Write_7Seg_Hex(Value, DP_Pos) : void
+  + HAL_SYSTICK_Hook() : void
+  - ActivateDigit(DigitNo) : void
+  - SegCtrl[4] : GPIO
+  - SegLED[8] : GPIO
+}
+
+class "Hauptprogramm\n(main.c)" as MAIN <<block>> {
+  + main() : int
+  + SystemClock_Config() : void
+  + MX_GPIO_Init() : void
+  + MX_I2C1_Init() : void
+  + HAL_GPIO_EXTI_Callback(Pin) : void
+  - TemperatureX10 : volatile int32_t
+  - PressurePa : volatile int32_t
+  - AltitudeM : volatile int32_t
+  - PressureDelta : volatile int32_t
+  - DispMode : DispMode_t
+}
+
+class "Taster" as BUTTON <<block>> {
+  + Button1 : PD1 (EXTI1)
+  + Button2 : PD2 (EXTI2)
+}
+
+class "I²C-Bus" as I2C <<block>> {
+  + ClockSpeed : Hz = 100000
+  + SDA : PB7
+  + SCL : PB6
+  + PullUp : Ohm = 4700
+}
+
+' Beziehungen
+MCU --> I2C : betreibt
+I2C --> SENSOR : verbunden mit
+DRIVER --> I2C : nutzt
+DRIVER --> SENSOR : steuert
+MAIN --> DRIVER : ruft auf
+MAIN --> DISPLAY : schreibt
+MAIN --> TEST : kann aktivieren
+MAIN --> BUTTON : liest
+MAIN --> MCU : laeuft auf
+
+@enduml
