@@ -368,26 +368,27 @@ Diese Funktionen sind vollständig **wiederverwendbar** und können in jedes STM
 ### 7.1 Systemarchitektur
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                     main.c                                     │
-│  ┌──────────────┐  ┌────────────────┐  ┌───────────────────┐   │
-│  │ SystemInit   │  │ BMP180 API     │  │ 7-Seg Display     │   │
-│  │ Clock Config │  │                │  │ (SiebenSeg.c)     │   │
-│  │ GPIO Init    │  │ BMP180_Start   │  │                   │   │
-│  │ I2C Init     │  │ BMP180_GetTemp │  │ Reset_7Seg()      │   │
-│  │              │  │ BMP180_GetPress│  │ Write_7Seg()      │   │
-│  │              │  │ BMP180_GetAlt  │  │ Write_7Seg_Hex()  │   │
-│  └──────────────┘  └───────┬────────┘  └───────────────────┘   │
-│                            │                                   │
-│                    ┌───────┴──────┐                            │
-│                    │  test_bmp180 │                            │
-│                    │  (optional)  │                            │
-│                    └──────────────┘                            │
-└────────────────────────────────────────────────────────────────┘
-                            │ I²C
-                    ┌───────┴────────┐
-                    │  BMP180 Sensor │
-                    └────────────────┘
+
++------------------------------- main.c ---------------------------------+
+|  +----------------+  +-------------------+  +---------------------+    |
+|  | SystemInit     |  | BMP180 API        |  | 7-Seg Display       |    |
+|  | Clock Config   |  |                   |  | (SiebenSeg.c)       |    |
+|  | GPIO Init      |  | BMP180_Start      |  |                     |    |
+|  | I2C Init       |  | BMP180_GetTemp    |  | Reset_7Seg()        |    |
+|  |                |  | BMP180_GetPress   |  | Write_7Seg()        |    |
+|  |                |  | BMP180_GetAlt     |  | Write_7Seg_Hex()    |    |
+|  +----------------+  +---------+---------+  +---------------------+    |
+|                               |                                        |
+|                        +------+------+                                 |
+|                        | test_bmp180 |                                 |
+|                        | (optional)  |                                 |
+|                        +-------------+                                 |
++------------------------------------------------------------------------+
+                                | I2C
+                        +-------+--------+
+                        | BMP180 Sensor  |
+                        +----------------+
+
 ```
 
 ### 7.2 Verwendete HAL-Ressourcen
