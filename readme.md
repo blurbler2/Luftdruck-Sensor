@@ -64,10 +64,6 @@ Die Kalibrierkoeffizienten umfassen:
 | B1, B2 | signed 16 Bit | Nichtlineare Druckkorrektur |
 | MB, MC, MD | signed 16 Bit | Temperaturkorrekturkonstanten |
 
-![Allgemeine Funktion des BMP180](docs/images/general_datasheet.png)
-
-*Abbildung 1: Allgemeine Beschreibung und Funktion des BMP180 (Datenblatt S. 9)*
-
 ---
 
 ## 3. Anschluss an den STM32 (Aufgabe 2)
@@ -122,6 +118,16 @@ SCL  ---+------------------> PB6 (I2C1_SCL)
 | PD7 | GPIO_OUT | 7-Segment Segment g |
 | PE3 | GPIO_OUT | 7-Segment Digit 3 |
 
+![CubeMX Pinout, Konfiguration](docs/images/pinout-bmp180.png)
+
+*Abbildung 1: Screenshot der CubeMX Konfiguration, Pinout*
+
+
+![CubeMX Clock Konfiguration](docs/images/clock-config-bmp180.png)
+
+*Abbildung 2: Screenshot der CubeMX Konfiguration, Clock*
+
+
 ### 3.4 I²C-Konfiguration im Detail
 
 ```c
@@ -137,7 +143,11 @@ hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
 
 ### 3.5 Taktversorgung
 
-Der STM32F411VET6 wird mit einem **8 MHz HSE-Quarz** betrieben. Über den PLL wird die Systemtaktfrequenz auf **84 MHz** hochgesetzt:
+Im Auslieferungszustand läuft der STM32F411VET6 nach Reset mit dem internen **HSI-Oszillator** bei **16 MHz**; die **PLL** und der externe **HSE-Quarz** sind dabei zunächst noch nicht aktiv.
+
+Für dieses Projekt wird der Controller aber bewusst mit einem **8 MHz HSE-Quarz** betrieben, weil damit eine präzise und stabile Zeitbasis zur Verfügung steht, die genug Rechenreserve für Sensorwert-Berechnung und Anzeige bietet. Die zulässigen Taktbereiche ergeben sich aus dem **STM32F411-Datenblatt** und dem **Reference Manual**; die konkrete Einstellung stammt aus der **CubeMX-Konfiguration**. 
+
+Gleichzeitig ergeben sich saubere Taktverhältnisse für die Peripherie, insbesondere für den I²C-Bus und das SysTick-Intervall. HSE steht für **High Speed External** und bezeichnet den externen Haupttaktgeber. Über die **PLL** (Phase-Locked Loop) wird dieser präzise Eingangstakt vervielfacht und die Systemtaktfrequenz auf **84 MHz** hochgesetzt:
 
 ```
 HSE 8 MHz -> PLL (M=8, N=336, P=4) -> SYSCLK 84 MHz
@@ -193,7 +203,7 @@ Durch vorsichtiges Drücken auf die Sensormembran oder Erwärmen des Sensors mit
 
 ![Funktionsnachweis](docs/images/working-demonstration.jpeg)
 
-*Abbildung 2: Finaler Aufbau mit BMP180 und STM32F4 Discovery Board*
+*Abbildung 3: Finaler Aufbau mit BMP180 und STM32F4 Discovery Board*
 
 ---
 
@@ -358,22 +368,22 @@ Diese Funktionen sind vollständig **wiederverwendbar** und können in jedes STM
 ### 7.1 Systemarchitektur
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     main.c                                   │
-│  ┌─────────────┐  ┌──────────────┐  ┌───────────────────┐   │
-│  │  SystemInit  │  │  BMP180 API  │  │   7-Seg Display    │   │
-│  │  Clock Config│  │              │  │  (SiebenSeg.c)     │   │
-│  │  GPIO Init   │  │  BMP180_Start│  │                    │   │
-│  │  I2C Init    │  │ BMP180_GetTemp│  │ Reset_7Seg()      │   │
-│  │              │  │ BMP180_GetPress│ │ Write_7Seg()      │   │
-│  │              │  │ BMP180_GetAlt │  │ Write_7Seg_Hex()  │   │
-│  └─────────────┘  └───────┬──────┘  └───────────────────┘   │
-│                           │                                   │
-│                    ┌──────┴──────┐                           │
-│                    │  test_bmp180 │                           │
-│                    │  (optional)  │                           │
-│                    └─────────────┘                           │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                     main.c                                     │
+│  ┌──────────────┐  ┌────────────────┐  ┌───────────────────┐   │
+│  │ SystemInit   │  │ BMP180 API     │  │ 7-Seg Display     │   │
+│  │ Clock Config │  │                │  │ (SiebenSeg.c)     │   │
+│  │ GPIO Init    │  │ BMP180_Start   │  │                   │   │
+│  │ I2C Init     │  │ BMP180_GetTemp │  │ Reset_7Seg()      │   │
+│  │              │  │ BMP180_GetPress│  │ Write_7Seg()      │   │
+│  │              │  │ BMP180_GetAlt  │  │ Write_7Seg_Hex()  │   │
+│  └──────────────┘  └───────┬────────┘  └───────────────────┘   │
+│                            │                                   │
+│                    ┌───────┴──────┐                            │
+│                    │  test_bmp180 │                            │
+│                    │  (optional)  │                            │
+│                    └──────────────┘                            │
+└────────────────────────────────────────────────────────────────┘
                             │ I²C
                     ┌───────┴────────┐
                     │  BMP180 Sensor │
@@ -440,7 +450,7 @@ Alle Berechnungen erfolgen in **vorzeichenbehafteter Integer-Arithmetik** (32 Bi
 
 ![Algorithmus aus dem Datenblatt](docs/images/algorithm_datasheet.png)
 
-*Abbildung 3: Kompensationsalgorithmus für Druck und Temperatur (Datenblatt S. 15)*
+*Abbildung 4: Kompensationsalgorithmus für Druck und Temperatur (Datenblatt S. 15)*
 
 ### 7.5 Höhenberechnung
 
@@ -516,7 +526,7 @@ Das BDD zeigt die Systemarchitektur auf Blockebene:
 
 ![SysML BDD](docs/sysml/bmp180_sysml.png)
 
-*Abbildung 4: SysML Block Definition Diagram -- Systemarchitektur*
+*Abbildung 5: SysML Block Definition Diagram -- Systemarchitektur*
 
 ### 10.2 Internal Block Diagram (IBD)
 
@@ -524,7 +534,7 @@ Das IBD zeigt die Daten- und Signalfüsse zwischen den Komponenten:
 
 ![SysML IBD](docs/sysml/bmp180_ibd.png)
 
-*Abbildung 5: SysML Internal Block Diagram -- Daten- und Signalfüsse*
+*Abbildung 6: SysML Internal Block Diagram -- Daten- und Signalfüsse*
 
 ---
 
