@@ -4,14 +4,14 @@
         {
             "label": "Build and Flash Main App",
             "type": "shell",
-            "command": "rm -rf build && cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake && cmake --build build && \"/Users/blurbler/Library/Application Support/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-objcopy\" -O binary build/Luftdruck-Sensor.elf build/Luftdruck-Sensor.bin && st-flash --connect-under-reset write build/Luftdruck-Sensor.bin 0x8000000 && echo successful",
+            "command": "rm -rf build && cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake && cmake --build build && \"/Users/blurbler/Library/Application Support/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-objcopy\" -O binary build/Luftdruck-Sensor.elf build/Luftdruck-Sensor.bin && st-flash --connect-under-reset write build/Luftdruck-Sensor.bin 0x8000000 && echo \"\" && echo \"=== Main App flashed successfully ===\"",
             "problemMatcher": [],
             "group": "build"
         },
         {
             "label": "Build and Flash Test",
             "type": "shell",
-            "command": "rm -rf build/Bmp180Test && cmake -B build/Bmp180Test -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake -DBMP180_TEST=ON && cmake --build build/Bmp180Test && \"/Users/blurbler/Library/Application Support/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-objcopy\" -O binary build/Bmp180Test/Luftdruck-Sensor.elf build/Bmp180Test/Luftdruck-Sensor.bin && st-flash --connect-under-reset write build/Bmp180Test/Luftdruck-Sensor.bin 0x8000000 && echo successful",
+            "command": "rm -rf build/Bmp180Test && cmake -B build/Bmp180Test -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake -DBMP180_TEST=ON && cmake --build build/Bmp180Test && \"/Users/blurbler/Library/Application Support/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-objcopy\" -O binary build/Bmp180Test/Luftdruck-Sensor.elf build/Bmp180Test/Luftdruck-Sensor.bin && st-flash --connect-under-reset write build/Bmp180Test/Luftdruck-Sensor.bin 0x8000000 && echo \"\" && echo \"Waiting 3 seconds for test to start...\" && sleep 3 && echo \"\" && echo \"Check 7-segment display:\" && echo \"  E1 or E2  -> TESTS FAILED\" && echo \"  Temp/Press/Alt  -> TESTS PASSED OK\"",
             "problemMatcher": [],
             "group": "test"
         }
