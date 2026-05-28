@@ -68,6 +68,21 @@ endif()
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
+# Find objcopy for .hex/.bin generation
+find_program(OBJCOPY arm-none-eabi-objcopy
+    PATHS /opt/homebrew/opt/arm-none-eabi-binutils/bin
+          /opt/homebrew/Cellar/arm-none-eabi-binutils/*/bin
+          /usr/local/opt/arm-none-eabi-binutils/bin
+          /usr/local/Cellar/arm-none-eabi-binutils/*/bin
+)
+if(OBJCOPY)
+    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND ${OBJCOPY} -O ihex $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.hex
+        COMMAND ${OBJCOPY} -O binary -S $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.bin
+        COMMENT "Generating .hex and .bin files"
+    )
+endif()
+
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx

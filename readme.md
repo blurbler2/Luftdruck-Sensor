@@ -309,8 +309,13 @@ Der Test-Modus wird über das CMake-Flag `BMP180_TEST` aktiviert. Am einfachsten
 
 Manuell:
 ```bash
-cmake -B build/Bmp180Test -DBMP180_TEST=ON
+# Build
+cmake -B build/Bmp180Test -DBMP180_TEST=ON -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake
 cmake --build build/Bmp180Test
+
+# Flashen (stlink-server vorher killen falls noetig)
+killall stlink-server 2>/dev/null
+st-flash --reset write build/Bmp180Test/Luftdruck-Sensor.bin 0x8000000
 ```
 
 Das erzeugt ein Binary, das nach dem Flashen **sofort die Test-Ergebnisse auf der 7-Segment-Anzeige** zeigt.
