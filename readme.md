@@ -4,7 +4,6 @@
 **Jahrgang:** AE27 (4. Semester)  
 **Gruppe:** 3 -- Sensor für Luftdruck GY-BMP180  
 
----
 
 ## 1. Aufgabenstellung
 
@@ -18,8 +17,6 @@
 | 4 | Geeignete Visualisierung der Ergebnisse unter Zuhilfenahme des E/A-Boards (7-Segmentanzeige, LED, usw.) oder eines 2004-LCD-Displays | [x] |
 | 5 | Erstellung einer Test-SW auf dem STM32, wobei die Bedienung der jeweiligen Komponente in wiederverwendbare Funktionen ausgelagert sein muss | [x] |
 | 6 | Dokumentation von Anschluss, Funktion, Parametern, Randbedingungen usw. sowie der SW | [x] |
-
----
 
 ## 2. Komponentenanalyse: BMP180 (Aufgabe 1)
 
@@ -64,7 +61,6 @@ Die Kalibrierkoeffizienten umfassen:
 | B1, B2 | signed 16 Bit | Nichtlineare Druckkorrektur |
 | MB, MC, MD | signed 16 Bit | Temperaturkorrekturkonstanten |
 
----
 
 ## 3. Anschluss an den STM32 (Aufgabe 2)
 
@@ -156,8 +152,6 @@ HSE 8 MHz -> PLL (M=8, N=336, P=4) -> SYSCLK 84 MHz
                                      -> APB2 42 MHz
 ```
 
----
-
 ## 4. Inbetriebnahme und Messergebnisse (Aufgabe 3)
 
 ### 4.1 Initialisierungsablauf
@@ -186,7 +180,6 @@ Durch vorsichtiges Drücken auf die Sensormembran oder Erwärmen des Sensors mit
 
 *Abbildung 3: Finaler Aufbau mit BMP180 und STM32F4 Discovery Board*
 
----
 
 ## 5. Visualisierung (Aufgabe 4)
 
@@ -267,8 +260,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 ```
 
----
-
 ## 6. Test-Software (Aufgabe 5)
 
 ### 6.1 Architektur
@@ -311,27 +302,44 @@ TestBMP180_Result_t TestBMP180_RunOnce(void);
    - Differenzbildung (aktuell - letzter Wert)
    - Rückgabe aller Werte in einer Struktur
 
-### 6.4 Einbindung in main.c
 
-```c
-#ifdef BMP180_TEST
-    TestBMP180_Init();
-    TestBMP180_Result_t tr = TestBMP180_RunOnce();
-    // Ergebnisse in globale Debug-Variablen kopieren
-    TemperatureX10 = tr.temperature_x10;
-    PressurePa     = tr.pressure_pa;
-    // Hauptschleife anhalten, damit Werte im Debugger inspiziert werden können
-    while (1) { HAL_Delay(1000); }
-#endif
-```
+### 6.4 Test-Modus aktivieren
 
-Aktivierung über CMake:
+Der Test-Modus wird über das CMake-Flag `BMP180_TEST` aktiviert. Am einfachsten ueber den VS Code Task **"Build and Flash Test"**.
+
+Manuell:
 ```bash
-cmake -B build -DBMP180_TEST=ON
-cmake --build build
+cmake -B build/Bmp180Test -DBMP180_TEST=ON
+cmake --build build/Bmp180Test
 ```
 
-### 6.5 Test der wiederverwendbaren BMP180-Bibliothek
+Das erzeugt ein Binary, das nach dem Flashen **sofort die Test-Ergebnisse auf der 7-Segment-Anzeige** zeigt.
+
+### 6.5 Test-Ergebnisse anzeigen
+
+Der Test-Modus zeigt die Ergebnisse **direkt auf der 7-Segment-Anzeige** -- kein Debugger nötig.
+
+**Ablauf:**
+1. VS Code Task **"Build and Flash Test"** ausführen
+2. 7-Segment-Anzeige beobachten:
+
+| Anzeige | Bedeutung |
+|---------|-----------|
+| `E1` | I²C-Fehler: Sensor nicht erreichbar (Verdrahtung prüfen) |
+| `E2` | Lesefehler: Sensor antwortet, aber Messwert ist 0 (defekter Sensor) |
+| `22.3` | Temperatur: 22,3 Grad C (2 Sekunden) |
+| `0.994` | Druck: 0,994 bar = 994 hPa (2 Sekunden) |
+| `0276` | Höhe: 276 m (2 Sekunden) |
+
+Die Werte wechseln alle 2 Sekunden automatisch durch.
+
+**E2 testen:** E2 ist ein theoretischer Fehlerfall (Sensor antwortet auf I²C, liefert aber Druck = 0). In der Praxis tritt er kaum auf. Zum Testen kann in `test_bmp180.c` Zeile 59 temporaer `r.ok = 0;` gesetzt werden.
+
+**Fehlersuche:**
+- `E1` → I²C-Verbindung prüfen (SDA/SCL, Pull-ups, 3,3 V)
+- `E2` → Sensor defekt oder I²C-Kommunikation gestört
+
+### 6.6 Test der wiederverwendbaren BMP180-Bibliothek
 
 Die Sensor-Bibliothek in `Core/Inc/bmp180.h` und `Core/Src/bmp180.c` stellt folgende öffentliche Funktionen bereit:
 
@@ -344,9 +352,10 @@ int32_t BMP180_GetAlt(int oss);                // Höhe in Metern (Näherung)
 
 Diese Funktionen sind vollständig **wiederverwendbar** und können in jedes STM32-Projekt übernommen werden, das einen BMP180 an I²C1 angeschlossen hat.
 
----
+
 
 ## 7. Software-Dokumentation (Aufgabe 6)
+
 
 ### 7.1 Systemarchitektur
 
@@ -375,16 +384,16 @@ Diese Funktionen sind vollständig **wiederverwendbar** und können in jedes STM
 
 Interrupts (asynchron zur Hauptschleife):
 ```
-  SysTick (1 ms) ──> HAL_IncTick() + HAL_SYSTICK_Hook() (Multiplexing)
-  EXTI1 (PD1)    ──> Button 1: DISP_PRESSURE <-> DISP_DELTA
-  EXTI2 (PD2)    ──> Button 2: TEMP -> ALT -> PRESS -> ...
+  SysTick (1 ms) --> HAL_IncTick() + HAL_SYSTICK_Hook() (Multiplexing)
+  EXTI1 (PD1)    --> Button 1: DISP_PRESSURE <-> DISP_DELTA
+  EXTI2 (PD2)    --> Button 2: TEMP -> ALT -> PRESS -> ...
 ```
 Schleife im Main Code: 
 ```
 while (1)                                                
   {                                                          
-    if (Zeit >= SENSOR_INTERVAL_MS) ──> BMP180_GetTemp/Press/Alt (Sensor Messung) 
-    if (Zeit >= DISPLAY_INTERVAL_MS)   ──> Write_7Seg(DispMode)  (Display Update)      
+    if (Zeit >= SENSOR_INTERVAL_MS) --> BMP180_GetTemp/Press/Alt (Sensor Messung) 
+    if (Zeit >= DISPLAY_INTERVAL_MS)   --> Write_7Seg(DispMode)  (Display Update)      
   }   
 ```
 
@@ -479,8 +488,6 @@ p0 = p * (1 - h0/44330)^(-5.255)
 
 Ist `KnownAltitudeMeters = 0`, wird der erste gemessene Druck als lokaler Referenzdruck verwendet (Relativmodus).
 
----
-
 ## 8. Interpretation der Ergebnisse
 
 Eine Luftdruckänderung ist im Alltag meist nur eine kleine, langsame Verschiebung des Messwerts:
@@ -494,7 +501,6 @@ Eine Luftdruckänderung ist im Alltag meist nur eine kleine, langsame Verschiebu
 
 Das Projekt bildet diese Änderungen durch `PressureDelta` (in Pascal) ab. Die 7-Segment-Anzeige zeigt wahlweise den Absolutdruck, die Temperatur, die Höhe oder die momentane Druckänderung.
 
----
 
 ## 9. Quellen
 
@@ -510,7 +516,6 @@ Das Projekt bildet diese Änderungen durch `PressureDelta` (in Pascal) ab. Die 7
   https://de.wikipedia.org/wiki/Luftdruck
 - **SiebenSeg-Bibliothek:** FH-Prof. Herbert Paulis, FH Campus Wien
 
----
 
 ## 10. SysML-Modell
 
@@ -537,37 +542,36 @@ Das IBD zeigt die Daten- und Signalfüsse zwischen den Komponenten:
 
 *Abbildung 6: SysML Internal Block Diagram -- Daten- und Signalfüsse*
 
----
 
 ## 11. Projektstruktur (STM32CubeIDE)
 
 ```
 Luftdruck-Sensor/
-├── Core/
-│   ├── Inc/
-│   │   ├── bmp180.h          # BMP180-Treiber (öffentliche API)
-│   │   ├── main.h            # Hauptdatei (Pin-Defines)
-│   │   ├── SiebenSeg.h       # 7-Segment-Bibliothek
-│   │   ├── test_bmp180.h     # Test-SW (öffentliche API)
-│   │   ├── stm32f4xx_hal_conf.h
-│   │   └── stm32f4xx_it.h
-│   └── Src/
-│       ├── main.c            # Hauptprogramm
-│       ├── bmp180.c          # BMP180-Treiber (Implementierung)
-│       ├── SiebenSeg.c       # 7-Segment-Bibliothek
-│       ├── test_bmp180.c     # Test-SW (Implementierung)
-│       ├── stm32f4xx_it.c    # Interrupt-Handler
-│       ├── stm32f4xx_hal_msp.c
-│       ├── syscalls.c / sysmem.c
-│       └── system_stm32f4xx.c
-├── Drivers/                  # HAL- und CMSIS-Treiber
-├── docs/
-│   ├── datasheet/            # BMP180-Datenblatt (PDF)
-│   ├── images/               # Abbildungen für Doku
-│   ├── HAL_manual_F4_Mar_2023.pdf
-│   └── luftdruck-sensor-projekt.pdf
-├── Luftdruck-Sensor.ioc      # STM32CubeMX-Projektdatei
-├── CMakeLists.txt            # CMake-Build-Konfiguration
-├── Doxyfile                  # Doxygen-Konfiguration
-└── readme.md                 # Diese Datei
++-- Core/
+|   +-- Inc/
+|   |   +-- bmp180.h          # BMP180-Treiber (öffentliche API)
+|   |   +-- main.h            # Hauptdatei (Pin-Defines)
+|   |   +-- SiebenSeg.h       # 7-Segment-Bibliothek
+|   |   +-- test_bmp180.h     # Test-SW (öffentliche API)
+|   |   +-- stm32f4xx_hal_conf.h
+|   |   +-- stm32f4xx_it.h
+|   +-- Src/
+|       +-- main.c            # Hauptprogramm
+|       +-- bmp180.c          # BMP180-Treiber (Implementierung)
+|       +-- SiebenSeg.c       # 7-Segment-Bibliothek
+|       +-- test_bmp180.c     # Test-SW (Implementierung)
+|       +-- stm32f4xx_it.c    # Interrupt-Handler
+|       +-- stm32f4xx_hal_msp.c
+|       +-- syscalls.c / sysmem.c
+|       +-- system_stm32f4xx.c
++-- Drivers/                  # HAL- und CMSIS-Treiber
++-- docs/
+|   +-- datasheet/            # BMP180-Datenblatt (PDF)
+|   +-- images/               # Abbildungen für Doku
+|   +-- HAL_manual_F4_Mar_2023.pdf
+|   +-- luftdruck-sensor-projekt.pdf
++-- Luftdruck-Sensor.ioc      # STM32CubeMX-Projektdatei
++-- CMakeLists.txt            # CMake-Build-Konfiguration
++-- Doxyfile                  # Doxygen-Konfiguration
++-- readme.md                 # Diese Datei
 ```

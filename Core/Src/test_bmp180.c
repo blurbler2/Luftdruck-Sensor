@@ -12,7 +12,7 @@ extern I2C_HandleTypeDef hi2c1;
 static uint8_t bmp180_i2c_probe(void)
 {
     uint8_t chip_id = 0;
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, 0xEE, 0xD0, 1, &chip_id, 1, HAL_MAX_DELAY);
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, 0xEE, 0xD0, 1, &chip_id, 1, 100);
     return (status == HAL_OK && chip_id == 0x55U) ? 1U : 0U;
 }
 

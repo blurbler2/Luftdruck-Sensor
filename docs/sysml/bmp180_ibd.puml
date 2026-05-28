@@ -5,7 +5,7 @@ skinparam component {
   BorderColor Black
 }
 
-title **SysML IBD: Luftdruck-Sensor System**\nInternal Block Diagram -- Daten- und Signalfuesse
+title **SysML IBD: Luftdruck-Sensor System**\nInternal Block Diagram -- non-blocking Datenfluesse
 
 component "STM32F411VET6\n(MCU)" as MCU {
 
@@ -13,8 +13,8 @@ component "STM32F411VET6\n(MCU)" as MCU {
     [SystemClock]
     [GPIO_Init]
     [I2C1_Init]
-    [Messzyklus\n(500 ms)]
-    [Taster-Auswertung\n(EXTI-Callback)]
+    [MainLoop]
+    [ExtiCallback]
   }
 
   component "BMP180 Treiber\n(bmp180.c/h)" as DRV {
@@ -52,21 +52,42 @@ component "Peripherie" as PERIPH {
   }
 }
 
+component "Interrupts" as IRQ {
+
+  component "SysTick\n(1 ms)" as SYSTICK {
+    [HAL_IncTick]
+    [HAL_SYSTICK_Hook]
+  }
+
+  component "EXTI1\n(Button1)" as EXTI1 {
+    [HAL_GPIO_EXTI_Callback]
+  }
+
+  component "EXTI2\n(Button2)" as EXTI2 {
+    [HAL_GPIO_EXTI_Callback]
+  }
+}
+
 ' Datenfluesse
 I2C1_Init --> DRV : HAL_I2C_Mem_Read/Write (100 kHz)
 DRV --> BMP : I2C-Bus (SDA/SCL)
 BMP --> DRV : Messdaten (UT, UP)
 
-DRV --> Messzyklus : Temperatur (0,1 °C)
-DRV --> Messzyklus : Druck (Pa)
-
-Messzyklus --> SEG : Wert + DP-Position
+MainLoop --> DRV : Sensor-Lesung (alle 500 ms)
+DRV --> MainLoop : Temperatur, Druck, Hoehe
+MainLoop --> SEG : Display-Update (alle 10 ms)
 SEG --> DISPLAY : GPIO Signale
 
-BUTTONS --> Taster_Auswertung : Falling Edge PD1/PD2
-Taster_Auswertung --> Messzyklus : DispMode aendern
+BUTTONS --> EXTI1 : Falling Edge PD1
+BUTTONS --> EXTI2 : Falling Edge PD2
+EXTI1 --> ExtiCallback : DispMode aendern
+EXTI2 --> ExtiCallback : DispMode zyklisch
+ExtiCallback --> MainLoop : DispMode (volatile)
 
-Messzyklus --> TEST : optional aktivieren
+SYSTICK --> SEG : Multiplexing (1 ms)
+SYSTICK --> MainLoop : HAL_GetTick()
+
+MainLoop --> TEST : optional aktivieren
 TEST --> BMP : Chip-ID pruefen (0x55)
 
 @enduml

@@ -58,7 +58,7 @@ With the extension for VSCode, it should work to select
 
 ### Flash
 
-- The VS Code task `Build and Flash STM32 (Debug)` builds the firmware, converts the ELF to a binary, then flashes it with ST-LINK.
+- The VS Code task `Build and Flash Test` builds the firmware, converts the ELF to a binary, then flashes it with ST-LINK.
 - The task uses a connect-under-reset flash command so it can recover more reliably when the board is already running code.
 
 ### What this repo assumes

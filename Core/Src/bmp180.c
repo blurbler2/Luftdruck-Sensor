@@ -52,7 +52,8 @@ void read_calliberation_data (void)
 {
 	uint8_t Callib_Data[22] = {0};
 	uint16_t Callib_Start = 0xAA;
-	HAL_I2C_Mem_Read(BMP180_I2C, BMP180_ADDRESS, Callib_Start, 1, Callib_Data, 22, HAL_MAX_DELAY);
+	/* Timeout 100 ms instead of HAL_MAX_DELAY: prevents infinite hang if I2C is disconnected */
+	HAL_I2C_Mem_Read(BMP180_I2C, BMP180_ADDRESS, Callib_Start, 1, Callib_Data, 22, 100);
 
 	AC1 = (int16_t)((Callib_Data[0] << 8) | Callib_Data[1]);
 	AC2 = (int16_t)((Callib_Data[2] << 8) | Callib_Data[3]);

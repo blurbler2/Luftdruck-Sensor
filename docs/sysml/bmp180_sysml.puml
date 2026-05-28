@@ -6,7 +6,7 @@ skinparam class {
   FontStyle bold
 }
 
-title **SysML BDD: Luftdruck-Sensor System**\nBlock Definition Diagram
+title **SysML BDD: Luftdruck-Sensor System**\nBlock Definition Diagram (non-blocking Architektur)
 
 class "STM32F411VET6\n(MCU)" as MCU <<block>> {
   + SystemClock_Config()
@@ -17,7 +17,7 @@ class "STM32F411VET6\n(MCU)" as MCU <<block>> {
 class "GY-BMP180\n(Drucksensor)" as SENSOR <<block>> {
   + I2C_Address : uint8_t = 0xEE
   + PressureRange : hPa = 300..1100
-  + TempRange : °C = -40..+85
+  + TempRange : degC = -40..+85
   + Oversampling : int[0..3]
 }
 
@@ -60,6 +60,8 @@ class "Hauptprogramm\n(main.c)" as MAIN <<block>> {
   - AltitudeM : volatile int32_t
   - PressureDelta : volatile int32_t
   - DispMode : DispMode_t
+  - lastSensorTick : uint32_t
+  - lastDisplayTick : uint32_t
 }
 
 class "Taster" as BUTTON <<block>> {
@@ -67,11 +69,23 @@ class "Taster" as BUTTON <<block>> {
   + Button2 : PD2 (EXTI2)
 }
 
-class "I²C-Bus" as I2C <<block>> {
+class "I2C-Bus" as I2C <<block>> {
   + ClockSpeed : Hz = 100000
   + SDA : PB7
   + SCL : PB6
   + PullUp : Ohm = 4700
+}
+
+class "SysTick-Timer" as SYSTICK <<block>> {
+  + Intervall : ms = 1
+  + HAL_IncTick() : void
+  + HAL_SYSTICK_Hook() : void
+}
+
+class "NVIC" as NVIC <<block>> {
+  + EXTI1_IRQn : priority 0
+  + EXTI2_IRQn : priority 0
+  + SysTick_IRQn : priority 0
 }
 
 ' Beziehungen
@@ -79,10 +93,14 @@ MCU --> I2C : betreibt
 I2C --> SENSOR : verbunden mit
 DRIVER --> I2C : nutzt
 DRIVER --> SENSOR : steuert
-MAIN --> DRIVER : ruft auf
-MAIN --> DISPLAY : schreibt
+MAIN --> DRIVER : ruft auf (non-blocking)
+MAIN --> DISPLAY : schreibt (alle 10 ms)
 MAIN --> TEST : kann aktivieren
-MAIN --> BUTTON : liest
+MAIN --> BUTTON : liest (via EXTI)
 MAIN --> MCU : laeuft auf
+MAIN --> SYSTICK : nutzt HAL_GetTick()
+SYSTICK --> DISPLAY : Multiplexing (1 ms)
+BUTTON --> NVIC : EXTI-Interrupt
+NVIC --> MAIN : Callback
 
 @enduml

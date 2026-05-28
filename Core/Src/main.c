@@ -68,6 +68,8 @@ volatile int32_t TemperatureX10 = 0;  /* 0.1 degC */
 volatile int32_t PressurePa     = 0;  /* Pascal */
 volatile int32_t AltitudeM      = 0;  /* metres */
 volatile int32_t PressureDelta  = 0;  /* Pa change since last sample */
+volatile uint8_t  TestI2C_OK    = 0;  /* != 0 if BMP180 responds on I2C (test mode) */
+volatile uint8_t  TestRead_OK   = 0;  /* != 0 if measurement succeeded (test mode) */
 
 /* Internal scaling values for 7-seg display,  multiplied to avoid floating point calculations*/
 uint16_t PressureBarX1000 = 0;  /* Pressure in bar * 1000 (e.g. 994 = 0.994 bar) */
@@ -125,19 +127,56 @@ int main(void)
   BMP180_Start();
 
 #ifdef BMP180_TEST
-  /* Optional test harness: run a single test cycle and stop so values are
-   * inspectable in the debugger. Enable by adding -DBMP180_TEST to your CFLAGS.
-   */
+  /* Test harness: show results on 7-segment display, no debugger needed */
   TestBMP180_Init();
   {
     TestBMP180_Result_t tr = TestBMP180_RunOnce();
-    /* expose results to the volatile debug variables used elsewhere */
     TemperatureX10 = tr.temperature_x10;
     PressurePa     = tr.pressure_pa;
     AltitudeM      = tr.altitude_m;
     PressureDelta  = tr.pressure_delta;
-    /* stay here so tester can inspect values; i2c_ok shows wiring/device presence */
-    while (1) { HAL_Delay(1000); }
+    TestI2C_OK     = tr.i2c_ok;
+    TestRead_OK    = tr.ok;
+
+    if (!tr.i2c_ok) {
+      /* I2C error: show "E1" (Error 1) */
+      while (1) {
+        Write_7Seg_Hex(0x00E1, 4);
+        HAL_Delay(1000);
+      }
+    }
+    if (!tr.ok) {
+      /* Read error: show "E2" (Error 2) */
+      while (1) {
+        Write_7Seg_Hex(0x00E2, 4);
+        HAL_Delay(1000);
+      }
+    }
+
+    /* Success: cycle through results on 7-segment display */
+    while (1) {
+      /* Temperature: e.g. 22.3 C -> 2230 with DP at pos 1 */
+      if (TemperatureX10 >= 0) {
+        uint16_t tempDisp = (uint16_t)(TemperatureX10 * 10);
+        if (tempDisp > 9999) tempDisp = 9999;
+        Write_7Seg(tempDisp, 1);
+      } else {
+        Write_7Seg(0, 4);
+      }
+      HAL_Delay(2000);
+
+      /* Pressure: e.g. 99400 Pa -> 994 bar*1000 -> 0994 with DP at pos 0 */
+      uint16_t pressDisp = (uint16_t)((PressurePa + 50) / 100);
+      if (pressDisp > 9999) pressDisp = 9999;
+      Write_7Seg(pressDisp, 0);
+      HAL_Delay(2000);
+
+      /* Altitude: e.g. 276 m -> 0276 */
+      uint16_t altDisp = (uint16_t)((AltitudeM < 0) ? 0 : AltitudeM);
+      if (altDisp > 9999) altDisp = 9999;
+      Write_7Seg(altDisp, 4);
+      HAL_Delay(2000);
+    }
   }
 #endif
   /* USER CODE END 2 */
