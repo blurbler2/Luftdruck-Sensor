@@ -168,26 +168,7 @@ HSE 8 MHz -> PLL (M=8, N=336, P=4) -> SYSCLK 84 MHz
 4. **Sensor-Init:** BMP180_Start()
    - Liest 22 Byte Kalibrierdaten aus EEPROM ab Adresse 0xAA
    - Speichert 11 Koeffizienten in globalen Variablen
-5. **Hauptschleife:** kontinuierliche Messung alle 500 ms
-
-### 4.2 Messablauf (ein Zyklus)
-
-```
-1. BMP180_GetTemp()
-   ├── Get_UTemp(): Schreiben 0x2E -> Reg 0xF4, warten 5 ms
-   ├── Lesen 2 Byte ab Reg 0xF6 -> UT
-   └── Kompensation: X1, X2, B5, T -> Temperatur in 0,1 °C
-
-2. BMP180_GetPress(oss=0)
-   ├── Get_UPress(0): Schreiben 0x34 -> Reg 0xF4, warten 5 ms
-   ├── Lesen 3 Byte ab Reg 0xF6 -> UP
-   └── Kompensation: B6, B3, B4, B7, p -> Druck in Pa
-
-3. BMP180_GetAlt(0)
-    └── h ~= (p0 - p) * 8434 / p0 (lineare Näherung)
-
-4. PressureDelta = PressurePa - PressurePrev
-```
+5. **Hauptschleife:** Die Hauptschleife läuft **ohne blockierende Warteschleifen** (`HAL_Delay`). Stattdessen wird über `HAL_GetTick()` die Systemzeit abgefragt und Tasks nur ausgeführt, wenn ihr Intervall abgelaufen ist
 
 ### 4.3 Nachweis der Funktion
 
@@ -195,9 +176,9 @@ Das System wurde erfolgreich in Betrieb genommen. Die gemessenen Werte liegen im
 
 | Größe | Typischer Wert | Bereich |
 |-------|---------------|---------|
-| Luftdruck | ~994 hPa (Wien, ~171 m ü.NN.) | 980--1020 hPa |
-| Temperatur | ~22--26 °C (Raumtemperatur) | abhängig von Umgebung |
-| Höhe | ~0--266 m (rel. zum Referenzdruck) | +/-500 m (Näherung) |
+| Luftdruck | ~994 hPa (Wien, ~171 m ü.NN.) | 980-1020 hPa |
+| Temperatur | ~22-26 °C (Raumtemperatur) | abhängig von Umgebung |
+| Höhe | ~0-266 m (rel. zum Referenzdruck) | +/-500 m (Näherung) |
 
 Durch vorsichtiges Drücken auf die Sensormembran oder Erwärmen des Sensors mit der Hand können Druck- bzw. Temperaturänderungen sichtbar gemacht werden.
 
@@ -263,22 +244,24 @@ Bei negativen Temperaturen wird keine Zahl angezeigt, da die 7-Segment-Anzeige k
 
 ### 5.3 Entprellung der Taster
 
-Beide Taster werden softwareseitig mit einer **200-ms-Entprellzeit** im EXTI-Callback entprellt:
+Beide Taster werden über **EXTI-Interrupts** (External Interrupt) erkannt und softwareseitig mit einer **Entprellzeit** `DEBOUNCE_MS` entprellt:
 
 ```c
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     static uint32_t lastTick1 = 0, lastTick2 = 0;
+    uint32_t now = HAL_GetTick();  /* Systemzeit aus SysTick-Interrupt */
+
     if (GPIO_Pin == Button1_Pin) {
-        if (HAL_GetTick() - lastTick1 > 200) {
-            lastTick1 = HAL_GetTick();
+        if ((now - lastTick1) > DEBOUNCE_MS) {
+            lastTick1 = now;
             DispMode = (DispMode == DISP_DELTA) ? DISP_PRESSURE : DISP_DELTA;
         }
     }
     else if (GPIO_Pin == Button2_Pin) {
-        if (HAL_GetTick() - lastTick2 > 200) {
-            lastTick2 = HAL_GetTick();
-            // zyklisch: TEMP -> ALT -> PRESS -> TEMP -> ...
+        if ((now - lastTick2) > DEBOUNCE_MS) {
+            lastTick2 = now;
+            /* zyklisch: TEMP -> ALT -> PRESS -> TEMP -> ... */
         }
     }
 }
@@ -388,7 +371,21 @@ Diese Funktionen sind vollständig **wiederverwendbar** und können in jedes STM
                         +-------+--------+
                         | BMP180 Sensor  |
                         +----------------+
+```
 
+Interrupts (asynchron zur Hauptschleife):
+```
+  SysTick (1 ms) ──> HAL_IncTick() + HAL_SYSTICK_Hook() (Multiplexing)
+  EXTI1 (PD1)    ──> Button 1: DISP_PRESSURE <-> DISP_DELTA
+  EXTI2 (PD2)    ──> Button 2: TEMP -> ALT -> PRESS -> ...
+```
+Schleife im Main Code: 
+```
+while (1)                                                
+  {                                                          
+    if (Zeit >= SENSOR_INTERVAL_MS) ──> BMP180_GetTemp/Press/Alt (Sensor Messung) 
+    if (Zeit >= DISPLAY_INTERVAL_MS)   ──> Write_7Seg(DispMode)  (Display Update)      
+  }   
 ```
 
 ### 7.2 Verwendete HAL-Ressourcen
@@ -400,7 +397,7 @@ Diese Funktionen sind vollständig **wiederverwendbar** und können in jedes STM
 | `HAL_GPIO_WritePin()` | Setzt einen GPIO-Pin auf High/Low |
 | `HAL_GPIO_EXTI_IRQHandler()` | Bearbeitet externe Interrupts (Taster) |
 | `HAL_Delay()` | Blockierende Verzögerung in ms |
-| `HAL_GetTick()` | Systemzeit (ms) seit Start, für Entprellung |
+| `HAL_GetTick()` | Systemzeit (ms) seit Start  |
 | `HAL_IncTick()` | Wird im SysTick-Interrupt erhöht |
 
 ### 7.3 Wichtige Parameter und Randbedingungen
@@ -409,11 +406,14 @@ Diese Funktionen sind vollständig **wiederverwendbar** und können in jedes STM
 |-----------|------|------------|
 | I²C-Takt | 100 kHz | Ausreichend für 2-Hz-Abtastrate, niedriger Stromverbrauch |
 | Oversampling (oss) | 0 | Minimale Wandlungszeit (4,5 ms), bei 500 ms Abtastintervall ausreichend |
-| Abtastintervall | 500 ms | Gut sichtbare Aktualisierung der 7-Segment-Anzeige |
+| Sensor-Abtastintervall | 500 ms | BMP180 benötigt ~10 ms pro Messzyklus (Temp + Druck) |
+| Display-Update-Intervall | 10 ms (100 Hz) | Flackerfreie Anzeige, schnelle Reaktion auf Taster-Druck |
 | I²C-Pull-up | 4,7 kOhm | Datenblatt-Empfehlung, notwendig für zuverlässige Kommunikation |
 | Kalibrierdaten | 22 Byte / 11 Koeffizienten | Werden beim Start einmalig ausgelesen |
 | Höhen-Näherung | linear: dh = (p0-p)*8434/p0 | Ausreichend für kleine Höhenunterschiede (< 500 m) |
-| SysTick | 1 ms | Grundlage für HAL_Delay und 7-Segment-Multiplexing |
+| SysTick | 1 ms | Grundlage für HAL_GetTick() und 7-Segment-Multiplexing |
+| Taster-Entprellung | 200 ms (im EXTI-Callback) | Verhindert mehrfaches Auslösen durch Prellen |
+| Interrupt-Prioritäten | SysTick=0, EXTI1=0, EXTI2=0 | Gleiche Priorität, SysTick hat Vorrang als System-Timer |
 
 ### 7.4 Kompensationsalgorithmus (nach Datenblatt)
 

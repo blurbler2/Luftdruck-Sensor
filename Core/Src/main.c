@@ -35,7 +35,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SENSOR_INTERVAL_MS  500   /* Sensor read every 500 ms */
+#define DISPLAY_INTERVAL_MS 10    /* Display refresh every 10 ms (100 Hz) */
+#define DEBOUNCE_MS         200   /* Button debounce time */
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,32 +63,32 @@ static void MX_I2C1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-// Sensor readings (volatile = visible in debug watch while running)
-volatile int32_t TemperatureX10 = 0;  // 0.1 degC
-volatile int32_t PressurePa     = 0;  // Pascal
-volatile int32_t AltitudeM      = 0;  // metres
-volatile int32_t PressureDelta  = 0;  // Pa change since last sample (watchable in debug)
+/* Sensor readings (volatile = visible in debug watch while running) */
+volatile int32_t TemperatureX10 = 0;  /* 0.1 degC */
+volatile int32_t PressurePa     = 0;  /* Pascal */
+volatile int32_t AltitudeM      = 0;  /* metres */
+volatile int32_t PressureDelta  = 0;  /* Pa change since last sample */
 
-// Internal scaling values for 7-seg display, multiplied to avoid floating point calculations
-uint16_t PressureBarX1000 = 0;  // Pressure in bar * 1000  (e.g. 994 = 0.994 bar)
-uint16_t TempX100         = 0;  // Temperature * 100       (e.g. 830 = 08.30 C)
-uint16_t AltitudeDispM    = 0;  // Altitude in whole metres (e.g. 266)
-uint16_t DeltaAbs         = 0;  // |PressureDelta| in Pa    (e.g. 50 = 50 Pa)
+/* Internal scaling values for 7-seg display,  multiplied to avoid floating point calculations*/
+uint16_t PressureBarX1000 = 0;  /* Pressure in bar * 1000 (e.g. 994 = 0.994 bar) */
+uint16_t TempX100         = 0;  /* Temperature * 100 (e.g. 830 = 08.30 C) */
+uint16_t AltitudeDispM    = 0;  /* Altitude in whole metres (e.g. 266) */
+uint16_t DeltaAbs         = 0;  /* |PressureDelta| in Pa (e.g. 50 = 50 Pa) */
 
-// Altitude calibration (one-shot from first measurement + known reference)
-/* If you know the local reference altitude (e.g. from GPS), set this
- * value (meters). If left as 0 the firmware will treat the first
- * measured pressure as the local sea-level reference (relative mode).
- */
-int32_t KnownAltitudeMeters     = 0;       /* Set this to non-zero to enable absolute altitude, e.g. average for Vienna is 171m NN*/
+/* Altitude calibration (one-shot from first measurement + known reference) */
+int32_t KnownAltitudeMeters = 276;  /* Set to non-zero for absolute altitude, 171 average, 276 in Hernals */
+int32_t SeaLevelPressure    = 101325;  /* Pa (integer reference) */
+uint8_t AltitudeCalibrated  = 0;
+int32_t PressurePrev        = 0;
 
-int32_t SeaLevelPressure        = 101325;  // Pa (integer reference)
-uint8_t AltitudeCalibrated      = 0;       // Flag to indicate if altitude calibration has been done (first measurement used as reference if KnownAltitudeMeters is zero)
-int32_t PressurePrev            = 0;       // Previous sample for delta computation
-
-// Display mode (cycled by buttons)
+/* Display mode (cycled by buttons) */
 typedef enum { DISP_PRESSURE = 0, DISP_DELTA, DISP_TEMPERATURE, DISP_ALTITUDE } DispMode_t;
 volatile DispMode_t DispMode = DISP_PRESSURE;
+
+/* Non-blocking timing state */
+static uint32_t lastSensorTick  = 0;
+static uint32_t lastDisplayTick = 0;
+
 /* USER CODE END 0 */
 
 /**
@@ -140,6 +142,10 @@ int main(void)
 #endif
   /* USER CODE END 2 */
 
+  /* Initialize timing */
+  lastSensorTick  = HAL_GetTick();
+  lastDisplayTick = HAL_GetTick();
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -147,89 +153,91 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /* Sample sensors continuously */
-    TemperatureX10 = BMP180_GetTemp();
-    PressurePa     = BMP180_GetPress(0);
+    uint32_t now = HAL_GetTick();
 
-    /* Initialize altitude calibration if no KnownAltitudeMeters is provided */
-    if (!AltitudeCalibrated)
+    /* --- Sensor reading (every SENSOR_INTERVAL_MS) --- */
+    if ((now - lastSensorTick) >= SENSOR_INTERVAL_MS)
     {
-      /* If the user provided a known reference altitude, compute the
-       * corresponding sea-level pressure p0 from the current measured
-       * pressure using the barometric formula inversion:
-       *   p0 = p * (1 - h0 / 44330)^{-5.255}
-       * This gives an absolute altitude reference. If KnownAltitudeMeters
-       * is zero, keep the existing behavior and treat the first measured
-       * pressure as the local reference (relative mode).
-       */
-      PressurePrev = PressurePa;
-      if (KnownAltitudeMeters != 0)
+      lastSensorTick = now;
+
+      /* Read temperature and pressure from BMP180 */
+      TemperatureX10 = BMP180_GetTemp();
+      PressurePa     = BMP180_GetPress(0);
+
+      /* Initialize altitude calibration if no KnownAltitudeMeters is provided */
+      if (!AltitudeCalibrated)
       {
-        float p = (float)PressurePa;
-        float h0 = (float)KnownAltitudeMeters;
-        /* Guard against invalid tiny/large values */
-        if (h0 < 40000.0f && h0 > -500.0f)
+        PressurePrev = PressurePa;
+        if (KnownAltitudeMeters != 0)
         {
-          float factor = 1.0f - (h0 / 44330.0f);
-          if (factor <= 0.0f) factor = 1e-6f;
-          float p0f = p * powf(factor, -5.255f);
-          SeaLevelPressure = (int32_t)(p0f + 0.5f);
+          float p = (float)PressurePa;
+          float h0 = (float)KnownAltitudeMeters;
+           /* Guard against invalid tiny/large values */
+          if (h0 < 40000.0f && h0 > -500.0f)
+          {
+            float factor = 1.0f - (h0 / 44330.0f);
+            if (factor <= 0.0f) factor = 1e-6f;
+            float p0f = p * powf(factor, -5.255f);
+            SeaLevelPressure = (int32_t)(p0f + 0.5f);
+          }
+          else
+          {
+             /* Fallback: use measured pressure */
+            SeaLevelPressure = PressurePa;
+          }
         }
         else
         {
-          /* Fallback: use measured pressure */
           SeaLevelPressure = PressurePa;
         }
+        AltitudeCalibrated = 1;
       }
-      else
-      {
-        SeaLevelPressure = PressurePa;
-      }
-      AltitudeCalibrated = 1;
+
+      /* Derived values */
+      AltitudeM     = BMP180_GetAlt(0);
+      PressureDelta = PressurePa - PressurePrev;
+      PressurePrev  = PressurePa;
     }
 
-    /* Derived values */
-    AltitudeM     = BMP180_GetAlt(0);
-    PressureDelta = PressurePa - PressurePrev;
-    PressurePrev  = PressurePa;
-
-    /* 7-segment display – scale to 4-digit integer per active mode */
-    switch (DispMode)
+    /* --- Display update (every DISPLAY_INTERVAL_MS) --- */
+    if ((now - lastDisplayTick) >= DISPLAY_INTERVAL_MS)
     {
-      case DISP_DELTA:
-        DeltaAbs = (uint16_t)((PressureDelta < 0) ? -PressureDelta : PressureDelta); // no negative values: absolute value of pressure change since last sample
-        if (DeltaAbs > 9999) DeltaAbs = 9999; // edge case: cap to display max
-        Write_7Seg(DeltaAbs, 4);  /* e.g. 0050 = 50 Pa change (no decimal) */
-        break;
+      lastDisplayTick = now;
 
-      case DISP_PRESSURE:
-        PressureBarX1000 = (uint16_t)((PressurePa + 50) / 100);
-        if (PressureBarX1000 > 9999) PressureBarX1000 = 9999;
-        Write_7Seg(PressureBarX1000, 0);  /* e.g. 0994 = 0.994 bar */
-        break;
+      switch (DispMode)
+      {
+        case DISP_DELTA:
+          DeltaAbs = (uint16_t)((PressureDelta < 0) ? -PressureDelta : PressureDelta);  // no negative values: absolute value of pressure change since last sample
+          if (DeltaAbs > 9999) DeltaAbs = 9999; // edge case: cap to display max
+          Write_7Seg(DeltaAbs, 4);  // e.g. 0050 = 50 Pa change (no decimal)
+          break;
 
-      case DISP_TEMPERATURE:
-        if (TemperatureX10 < 0)
-        {
-          /* negative temp not displayable with current 7-seg helper; show 0 */
-          Write_7Seg(0, 4);
-        }
-        else
-        {
-          TempX100 = (uint16_t)(TemperatureX10 * 10); /* 0.1 degC -> 0.01 display format */
-          if (TempX100 > 9999) TempX100 = 9999;
-          Write_7Seg(TempX100, 1);  /* e.g. 0830 = 08.30 C */
-        }
-        break;
+        case DISP_PRESSURE:
+          PressureBarX1000 = (uint16_t)((PressurePa + 50) / 100); // convert Pa to bar with rounding (e.g. 994 = 0.994 bar)
+          if (PressureBarX1000 > 9999) PressureBarX1000 = 9999;
+          Write_7Seg(PressureBarX1000, 0); // e.g. 0994 = 0.994 bar
+          break;
 
-      case DISP_ALTITUDE:
-        AltitudeDispM = (uint16_t)((AltitudeM < 0) ? 0 : AltitudeM);
-        if (AltitudeDispM > 9999) AltitudeDispM = 9999;
-        Write_7Seg(AltitudeDispM, 4);  /* e.g. 0266 = 266 m (no decimal) */
-        break;
+        case DISP_TEMPERATURE:
+          if (TemperatureX10 < 0)
+          {
+            Write_7Seg(0, 4); // display "----" for negative temperatures (e.g. -5.0 C)
+          }
+          else
+          {
+            TempX100 = (uint16_t)(TemperatureX10 * 10); // convert 0.1 degC to 0.01 degC for display (e.g. 830 = 08.30 C)
+            if (TempX100 > 9999) TempX100 = 9999;
+            Write_7Seg(TempX100, 1); // e.g. 0830 = 08.30 C (no decimal, but last digit is 0.1 C)
+          }
+          break;
+
+        case DISP_ALTITUDE:
+          AltitudeDispM = (uint16_t)((AltitudeM < 0) ? 0 : AltitudeM);
+          if (AltitudeDispM > 9999) AltitudeDispM = 9999;
+          Write_7Seg(AltitudeDispM, 4); // e.g. 0266 = 266 m (no decimal)
+          break;
+      }
     }
-
-    HAL_Delay(500); // sample every 500 ms
   }
   /* USER CODE END 3 */
 }
@@ -278,6 +286,48 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
+/* USER CODE BEGIN 4 */
+
+/**
+  * @brief  EXTI callback – handles Button1 (PD1) and Button2 (PD2) with debounce.
+  *
+  * Button1: toggles between DISP_PRESSURE and DISP_DELTA.
+  * Button2: cycles DISP_TEMPERATURE -> DISP_ALTITUDE -> DISP_PRESSURE -> ...
+  *
+  * This callback runs in interrupt context (from EXTI1/EXTI2 handlers).
+  * It uses HAL_GetTick() for debounce, which is safe because HAL_IncTick()
+  * is called from SysTick_Handler (higher priority than EXTI).
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  static uint32_t lastTick1 = 0;
+  static uint32_t lastTick2 = 0;
+  uint32_t now = HAL_GetTick();
+
+  if (GPIO_Pin == Button1_Pin)
+  {
+    if ((now - lastTick1) > DEBOUNCE_MS)
+    {
+      lastTick1 = now;
+      DispMode = (DispMode == DISP_DELTA) ? DISP_PRESSURE : DISP_DELTA;
+    }
+  }
+  else if (GPIO_Pin == Button2_Pin)
+  {
+    if ((now - lastTick2) > DEBOUNCE_MS)
+    {
+      lastTick2 = now;
+      switch (DispMode)
+      {
+        case DISP_TEMPERATURE: DispMode = DISP_ALTITUDE;    break;
+        case DISP_ALTITUDE:    DispMode = DISP_PRESSURE;    break;
+        default:               DispMode = DISP_TEMPERATURE; break;
+      }
+    }
+  }
+}
+/* USER CODE END 4 */
 
 /**
   * @brief I2C1 Initialization Function
@@ -403,43 +453,6 @@ static void MX_GPIO_Init(void)
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
-
-/* USER CODE BEGIN 4 */
-
-/**
-  * @brief  EXTI callback – handles Button1 (PD1) and Button2 (PD2) with debounce.
-  *
-  * Button1: toggles between DISP_PRESSURE and DISP_DELTA.
-  * Button2: cycles DISP_TEMPERATURE → DISP_ALTITUDE → DISP_PRESSURE → ...
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  static uint32_t lastTick1 = 0;
-  static uint32_t lastTick2 = 0;
-
-  if (GPIO_Pin == Button1_Pin)
-  {
-    if (HAL_GetTick() - lastTick1 > 200) // debounce: ignore if less than 200 ms since last press
-    {
-      lastTick1 = HAL_GetTick(); // update last tick for debounce
-      DispMode = (DispMode == DISP_DELTA) ? DISP_PRESSURE : DISP_DELTA;
-    }
-  }
-  else if (GPIO_Pin == Button2_Pin)
-  {
-    if (HAL_GetTick() - lastTick2 > 200) // debounce: ignore if less than 200 ms since last press
-    {
-      lastTick2 = HAL_GetTick(); // update last tick for debounce
-      switch (DispMode)
-      {
-        case DISP_TEMPERATURE: DispMode = DISP_ALTITUDE;    break;
-        case DISP_ALTITUDE:    DispMode = DISP_PRESSURE;    break;
-        default:               DispMode = DISP_TEMPERATURE; break;
-      }
-    }
-  }
-}
-/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
