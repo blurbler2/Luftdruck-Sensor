@@ -333,6 +333,8 @@ Der Test-Modus zeigt die Ergebnisse **direkt auf der 7-Segment-Anzeige** -- kein
 
 Die Werte wechseln alle 2 Sekunden automatisch durch.
 
+**Laufzeit-I²C-Überwachung:** Der Test prüft vor jedem Anzeigewert erneut die I²C-Verbindung. Wenn während des Tests ein Kabel abgesteckt wird, wechselt die Anzeige sofort zu `E1`. Wird das Kabel wieder angesteckt, liest der Test die Sensorwerte neu ein und zeigt wieder Temp/Druck/Höhe an. Das demonstriert die Fähigkeit des Systems, Hardware-Fehler zur Laufzeit zu erkennen und sich davon zu erholen.
+
 **E2 testen:** E2 ist ein theoretischer Fehlerfall (Sensor antwortet auf I²C, liefert aber Druck = 0). In der Praxis tritt er kaum auf. Zum Testen kann in `test_bmp180.c` Zeile 59 temporaer `r.ok = 0;` gesetzt werden.
 
 **Fehlersuche:**

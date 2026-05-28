@@ -154,7 +154,24 @@ int main(void)
     }
 
     /* Success: cycle through results on 7-segment display */
+    /* Periodically re-check I2C to detect runtime hardware failures */
     while (1) {
+      /* Check I2C connectivity before each display cycle */
+      if (!TestBMP180_CheckI2C()) {
+        /* I2C failure detected at runtime: show "E1" */
+        while (!TestBMP180_CheckI2C()) {
+          Write_7Seg_Hex(0x00E1, 4);
+          HAL_Delay(1000);
+        }
+        /* I2C restored: re-read sensor values */
+        TemperatureX10 = BMP180_GetTemp();
+        PressurePa     = BMP180_GetPress(0);
+        AltitudeM      = BMP180_GetAlt(0);
+        PressureDelta  = PressurePa - PressurePrev;
+        PressurePrev   = PressurePa;
+        continue;  /* restart display cycle with fresh values */
+      }
+
       /* Temperature: e.g. 22.3 C -> 2230 with DP at pos 1 */
       if (TemperatureX10 >= 0) {
         uint16_t tempDisp = (uint16_t)(TemperatureX10 * 10);
@@ -165,11 +182,39 @@ int main(void)
       }
       HAL_Delay(2000);
 
+      /* Check I2C again */
+      if (!TestBMP180_CheckI2C()) {
+        while (!TestBMP180_CheckI2C()) {
+          Write_7Seg_Hex(0x00E1, 4);
+          HAL_Delay(1000);
+        }
+        TemperatureX10 = BMP180_GetTemp();
+        PressurePa     = BMP180_GetPress(0);
+        AltitudeM      = BMP180_GetAlt(0);
+        PressureDelta  = PressurePa - PressurePrev;
+        PressurePrev   = PressurePa;
+        continue;
+      }
+
       /* Pressure: e.g. 99400 Pa -> 994 bar*1000 -> 0994 with DP at pos 0 */
       uint16_t pressDisp = (uint16_t)((PressurePa + 50) / 100);
       if (pressDisp > 9999) pressDisp = 9999;
       Write_7Seg(pressDisp, 0);
       HAL_Delay(2000);
+
+      /* Check I2C again */
+      if (!TestBMP180_CheckI2C()) {
+        while (!TestBMP180_CheckI2C()) {
+          Write_7Seg_Hex(0x00E1, 4);
+          HAL_Delay(1000);
+        }
+        TemperatureX10 = BMP180_GetTemp();
+        PressurePa     = BMP180_GetPress(0);
+        AltitudeM      = BMP180_GetAlt(0);
+        PressureDelta  = PressurePa - PressurePrev;
+        PressurePrev   = PressurePa;
+        continue;
+      }
 
       /* Altitude: e.g. 276 m -> 0276 */
       uint16_t altDisp = (uint16_t)((AltitudeM < 0) ? 0 : AltitudeM);
