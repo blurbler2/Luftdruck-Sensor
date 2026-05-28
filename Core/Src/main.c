@@ -18,15 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 #include "SiebenSeg.h"
 #include "bmp180.h"
 #include "test_bmp180.h"
 #include <stdint.h>
 #include <math.h>
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -231,6 +230,7 @@ int main(void)
     }
 
     HAL_Delay(500); // sample every 500 ms
+  }
   /* USER CODE END 3 */
 }
 
@@ -278,43 +278,6 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
-
-/* USER CODE BEGIN 4 */
-
-/**
-  * @brief  EXTI callback – handles Button1 (PD1) and Button2 (PD2) with debounce.
-  *
-  * Button1: toggles between DISP_PRESSURE and DISP_DELTA.
-  * Button2: cycles DISP_TEMPERATURE → DISP_ALTITUDE → DISP_PRESSURE → ...
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  static uint32_t lastTick1 = 0;
-  static uint32_t lastTick2 = 0;
-
-  if (GPIO_Pin == Button1_Pin)
-  {
-    if (HAL_GetTick() - lastTick1 > 200) // debounce: ignore if less than 200 ms since last press
-    {
-      lastTick1 = HAL_GetTick(); // update last tick for debounce
-      DispMode = (DispMode == DISP_DELTA) ? DISP_PRESSURE : DISP_DELTA;
-    }
-  }
-  else if (GPIO_Pin == Button2_Pin)
-  {
-    if (HAL_GetTick() - lastTick2 > 200) // debounce: ignore if less than 200 ms since last press
-    {
-      lastTick2 = HAL_GetTick(); // update last tick for debounce
-      switch (DispMode)
-      {
-        case DISP_TEMPERATURE: DispMode = DISP_ALTITUDE;    break;
-        case DISP_ALTITUDE:    DispMode = DISP_PRESSURE;    break;
-        default:               DispMode = DISP_TEMPERATURE; break;
-      }
-    }
-  }
-}
-/* USER CODE END 4 */
 
 /**
   * @brief I2C1 Initialization Function
@@ -443,6 +406,39 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+/**
+  * @brief  EXTI callback – handles Button1 (PD1) and Button2 (PD2) with debounce.
+  *
+  * Button1: toggles between DISP_PRESSURE and DISP_DELTA.
+  * Button2: cycles DISP_TEMPERATURE → DISP_ALTITUDE → DISP_PRESSURE → ...
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  static uint32_t lastTick1 = 0;
+  static uint32_t lastTick2 = 0;
+
+  if (GPIO_Pin == Button1_Pin)
+  {
+    if (HAL_GetTick() - lastTick1 > 200) // debounce: ignore if less than 200 ms since last press
+    {
+      lastTick1 = HAL_GetTick(); // update last tick for debounce
+      DispMode = (DispMode == DISP_DELTA) ? DISP_PRESSURE : DISP_DELTA;
+    }
+  }
+  else if (GPIO_Pin == Button2_Pin)
+  {
+    if (HAL_GetTick() - lastTick2 > 200) // debounce: ignore if less than 200 ms since last press
+    {
+      lastTick2 = HAL_GetTick(); // update last tick for debounce
+      switch (DispMode)
+      {
+        case DISP_TEMPERATURE: DispMode = DISP_ALTITUDE;    break;
+        case DISP_ALTITUDE:    DispMode = DISP_PRESSURE;    break;
+        default:               DispMode = DISP_TEMPERATURE; break;
+      }
+    }
+  }
+}
 /* USER CODE END 4 */
 
 /**
